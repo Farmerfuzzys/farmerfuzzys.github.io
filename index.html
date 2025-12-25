@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>FarmerFuzzys Login</title>
+</head>
+<body>
+  <h1>Login</h1>
+
+  <input type="text" id="user" placeholder="Benutzername"><br><br>
+  <input type="password" id="pass" placeholder="Passwort"><br><br>
+
+  <button onclick="login()">Login</button>
+
+  <script>
+    function login() {
+      const user = document.getElementById("user").value;
+      const pass = document.getElementById("pass").value;
+
+      if (user === "admin" && pass === "1234") {
+        window.location.href = "dashboard.html";
+      } else {
+        alert("Falsche Login-Daten");
+      }
+    }
+  </script>
+</body>
+</html>
