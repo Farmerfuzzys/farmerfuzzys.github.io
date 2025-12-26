@@ -1,137 +1,119 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<title>Dashboard</title>
-<style>
-body {
-  background:#0f0f0f;
-  color:#fff;
-  font-family:Arial;
-}
-.card {
-  background:#1c1c1c;
-  padding:20px;
-  margin:20px 0;
-  border-radius:10px;
-}
-input, button {
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-  background:#2a2a2a;
-  color:#fff;
-  border:none;
-  border-radius:6px;
-}
-button { cursor:pointer; }
-.admin { border:1px solid #ff6a00; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+<body class="dashboard-body">
 
-<body>
+    <nav class="navbar">
+        <span class="logo">FarmerFuzzys</span>
+        <button onclick="logout()" class="btn-secondary">Logout</button>
+    </nav>
 
-<h1>Dashboard</h1>
-<div id="userInfo"></div>
+    <main class="content">
+        <div class="welcome-section">
+            <h1 id="welcomeText">Lädt...</h1>
+            <div id="roleBadge" class="badge">Rolle</div>
+        </div>
 
-<div id="adminPanel" style="display:none">
-  <div class="card admin">
-    <h2>Admin Panel</h2>
+        <div id="adminArea" style="display:none;">
+            <div class="grid">
+                <div class="glass-card admin-card">
+                    <h2>Neuen User erstellen</h2>
+                    <input id="newUser" placeholder="Benutzername">
+                    <input id="newPass" type="password" placeholder="Passwort">
+                    <select id="newRole">
+                        <option value="user">Standard User</option>
+                        <option value="admin">Administrator</option>
+                    </select>
+                    <button onclick="createUser()" class="btn-primary">Account erstellen</button>
+                </div>
 
-    <input id="newUser" placeholder="Benutzername">
-    <input id="newPass" placeholder="Passwort">
-    <select id="newRole">
-      <option value="user">User</option>
-      <option value="admin">Admin</option>
-    </select>
-    <button onclick="createUser()">User erstellen</button>
-  </div>
-</div>
+                <div class="glass-card list-card">
+                    <h2>Benutzerverwaltung</h2>
+                    <div id="userList" class="user-list">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </main>
 
-<button onclick="logout()">Logout</button>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } 
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc } 
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        const firebaseConfig = {
+            apiKey: "842395157432",
+            authDomain: "Farmerfuzzys.firebaseapp.com",
+            projectId: "farmerfuzzys-c32eb"
+        };
 
-const firebaseConfig = {
-  apiKey: "DEIN_API_KEY",
-  authDomain: "DEIN_PROJEKT.firebaseapp.com",
-  projectId: "DEIN_PROJEKT"
-};
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+        const toEmail = (name) => name.toLowerCase().trim() + "@farmerfuzzys.local";
 
-function toEmail(username){
-  return username.toLowerCase() + "@farmerfuzzys.local";
-}
+        onAuthStateChanged(auth, async user => {
+            if (!user) { location.href = "index.html"; return; }
+            
+            const snap = await getDoc(doc(db, "users", user.uid));
+            if (!snap.exists()) { alert("Kein Profil gefunden!"); return; }
+            
+            const data = snap.data();
+            document.getElementById('welcomeText').innerText = `Hallo, ${data.username}!`;
+            document.getElementById('roleBadge').innerText = data.role.toUpperCase();
 
-onAuthStateChanged(auth, async user => {
-  if (!user) {
-    location.href = "index.html";
-    return;
-  }
+            if (data.role === "admin") {
+                document.getElementById('adminArea').style.display = "block";
+                loadUsers();
+            }
+        });
 
-  const ref = doc(db, "users", user.uid);
-  const snap = await getDoc(ref);
+        window.createUser = async () => {
+            const name = document.getElementById('newUser').value;
+            const pass = document.getElementById('newPass').value;
+            const role = document.getElementById('newRole').value;
 
-  if (!snap.exists()) {
-    document.body.innerHTML = "Kein Benutzerprofil";
-    return;
-  }
+            // Der Trick: Eine zweite App-Instanz nutzen, um den Admin nicht auszuloggen
+            const adminApp = initializeApp(firebaseConfig, "AdminApp");
+            const adminAuth = getAuth(adminApp);
 
-  const data = snap.data();
-  userInfo.innerHTML = `
-    <p>Benutzer: <b>${data.username}</b></p>
-    <p>Rolle: <b>${data.role}</b></p>
-  `;
+            try {
+                const cred = await createUserWithEmailAndPassword(adminAuth, toEmail(name), pass);
+                await setDoc(doc(db, "users", cred.user.uid), { username: name, role: role });
+                await signOut(adminAuth);
+                alert("User erstellt!");
+                location.reload();
+            } catch (e) { alert("Fehler: " + e.message); }
+        };
 
-  if (data.role === "admin") {
-    adminPanel.style.display = "block";
-  }
-});
+        async function loadUsers() {
+            const snap = await getDocs(collection(db, "users"));
+            const list = document.getElementById('userList');
+            list.innerHTML = "";
+            snap.forEach(uDoc => {
+                const u = uDoc.data();
+                list.innerHTML += `
+                    <div class="user-item">
+                        <span><b>${u.username}</b> (${u.role})</span>
+                        <button class="btn-danger" onclick="deleteUser('${uDoc.id}')">Löschen</button>
+                    </div>`;
+            });
+        }
 
-window.createUser = async () => {
-  const username = newUser.value;
-  const password = newPass.value;
-  const role = newRole.value;
+        window.deleteUser = async (id) => {
+            if(confirm("Eintrag löschen?")) {
+                await deleteDoc(doc(db, "users", id));
+                location.reload();
+            }
+        };
 
-  if (!username || !password) {
-    alert("Fehlende Daten");
-    return;
-  }
-
-  try {
-    const cred = await createUserWithEmailAndPassword(
-      auth,
-      toEmail(username),
-      password
-    );
-
-    await setDoc(doc(db, "users", cred.user.uid), {
-      username,
-      role
-    });
-
-    alert("User erstellt");
-    newUser.value = "";
-    newPass.value = "";
-
-  } catch (e) {
-    alert("Fehler: " + e.message);
-  }
-};
-
-window.logout = async () => {
-  await signOut(auth);
-  location.href = "index.html";
-};
-</script>
-
+        window.logout = () => signOut(auth);
+    </script>
 </body>
 </html>
