@@ -1,73 +1,84 @@
-* {
-  box-sizing: border-box;
-  font-family: Arial, Helvetica, sans-serif;
+:root {
+  --bg: #0b0e14;
+  --card: #151921;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --danger: #dc2626;
+  --text: #f3f4f6;
+  --border: #262c3a;
 }
+
+* { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background: #0f172a;
-  color: #e5e7eb;
+  background: var(--bg);
+  color: var(--text);
   display: flex;
   justify-content: center;
   align-items: center;
+  background-image: radial-gradient(circle at top right, #1e293b, transparent);
 }
 
 .container {
-  background: #020617;
-  padding: 30px;
+  background: var(--card);
+  padding: 40px;
   width: 100%;
-  max-width: 400px;
-  border-radius: 12px;
-  box-shadow: 0 0 30px rgba(0,0,0,0.6);
+  max-width: 450px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  border: 1px solid var(--border);
 }
 
-h1 {
-  text-align: center;
-  margin-bottom: 20px;
-}
+h1, h2 { text-align: center; margin-top: 0; color: #fff; }
 
-input, button {
+input, select, button {
   width: 100%;
   padding: 12px;
-  margin-top: 10px;
+  margin-top: 15px;
   border-radius: 8px;
-  border: none;
-}
-
-input {
-  background: #020617;
+  border: 1px solid var(--border);
+  background: #0b0e14;
   color: white;
-  border: 1px solid #1e293b;
+  font-size: 1rem;
 }
 
 button {
-  background: #2563eb;
-  color: white;
+  background: var(--accent);
+  border: none;
+  font-weight: 600;
   cursor: pointer;
+  transition: transform 0.1s, background 0.2s;
 }
 
-button:hover {
-  background: #1d4ed8;
+button:hover { background: var(--accent-hover); transform: translateY(-1px); }
+button:active { transform: translateY(0); }
+
+.card {
+  background: #1e2430;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
 }
 
-.admin {
-  background: #7c2d12;
-}
-
-.admin:hover {
-  background: #9a3412;
-}
-
-.list {
-  margin-top: 20px;
-}
-
-.user {
-  background: #020617;
-  padding: 10px;
-  margin-top: 8px;
-  border-radius: 6px;
+.user-item {
+  background: #0b0e14;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 8px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  border-left: 4px solid var(--accent);
 }
+
+.btn-delete {
+  background: var(--danger);
+  width: auto;
+  padding: 6px 12px;
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.logout-btn { background: #334155; margin-top: 30px; }
