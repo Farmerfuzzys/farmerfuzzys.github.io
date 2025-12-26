@@ -1,52 +1,57 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>FarmerFuzzys Login</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FarmerFuzzys | Login</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="container">
+        <div class="glass-card">
+            <h1>Willkommen</h1>
+            <p class="subtitle">Bitte logge dich in dein Dashboard ein</p>
+            
+            <div class="input-group">
+                <label>Benutzername</label>
+                <input id="user" type="text" placeholder="z.B. MaxMustermann">
+            </div>
 
-<div class="container">
-  <h1>Login</h1>
+            <div class="input-group">
+                <label>Passwort</label>
+                <input id="pass" type="password" placeholder="••••••••">
+            </div>
 
-  <input id="user" placeholder="Benutzername">
-  <input id="pass" type="password" placeholder="Passwort">
+            <button onclick="login()" id="loginBtn">Anmelden</button>
+        </div>
+    </div>
 
-  <button onclick="login()">Login</button>
-</div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword } 
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        const firebaseConfig = {
+            apiKey: "842395157432",
+            authDomain: "Farmerfuzzys.firebaseapp.com",
+            projectId: "farmerfuzzys-c32eb"
+        };
 
-const firebaseConfig = {
-  apiKey: "842395157432",
-  authDomain: "Farmerfuzzys.firebaseapp.com",
-  projectId: "farmerfuzzys-c32eb"
-};
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+        const toEmail = (name) => name.toLowerCase().trim() + "@farmerfuzzys.local";
 
-function toEmail(username) {
-  return username.toLowerCase() + "@farmerfuzzys.local";
-}
-
-window.login = async () => {
-  try {
-    await signInWithEmailAndPassword(
-      auth,
-      toEmail(user.value),
-      pass.value
-    );
-    location.href = "dashboard.html";
-  } catch {
-    alert("Login fehlgeschlagen");
-  }
-};
-</script>
-
+        window.login = async () => {
+            const btn = document.getElementById('loginBtn');
+            btn.innerText = "Lädt...";
+            try {
+                await signInWithEmailAndPassword(auth, toEmail(document.getElementById('user').value), document.getElementById('pass').value);
+                location.href = "dashboard.html";
+            } catch (error) {
+                alert("Login fehlgeschlagen: " + error.message);
+                btn.innerText = "Anmelden";
+            }
+        };
+    </script>
 </body>
 </html>
