@@ -14,7 +14,7 @@
             
             <div class="input-group">
                 <label>Benutzername</label>
-                <input id="user" type="text" placeholder="z.B. MaxMustermann">
+                <input id="user" type="text" placeholder="z.B. Max">
             </div>
 
             <div class="input-group">
@@ -22,7 +22,7 @@
                 <input id="pass" type="password" placeholder="••••••••">
             </div>
 
-            <button onclick="login()" id="loginBtn">Anmelden</button>
+            <button onclick="login()" id="loginBtn" class="btn-primary">Anmelden</button>
         </div>
     </div>
 
@@ -30,10 +30,14 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+        // Deine echten Daten aus dem Screenshot
         const firebaseConfig = {
-            apiKey: "842395157432",
-            authDomain: "Farmerfuzzys.firebaseapp.com",
-            projectId: "farmerfuzzys-c32eb"
+            apiKey: "AIzaSyDiYOJWP4XMQRJ6b-RfJp6Aqxis7E-uA30",
+            authDomain: "farmerfuzzys-c32eb.firebaseapp.com",
+            projectId: "farmerfuzzys-c32eb",
+            storageBucket: "farmerfuzzys-c32eb.firebasestorage.app",
+            messagingSenderId: "842395157432",
+            appId: "1:842395157432:web:fd031d7cc0c2a6e69ec54d"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -43,12 +47,17 @@
 
         window.login = async () => {
             const btn = document.getElementById('loginBtn');
+            const userVal = document.getElementById('user').value;
+            const passVal = document.getElementById('pass').value;
+
+            if(!userVal || !passVal) return alert("Bitte alles ausfüllen!");
+
             btn.innerText = "Lädt...";
             try {
-                await signInWithEmailAndPassword(auth, toEmail(document.getElementById('user').value), document.getElementById('pass').value);
+                await signInWithEmailAndPassword(auth, toEmail(userVal), passVal);
                 location.href = "dashboard.html";
             } catch (error) {
-                alert("Login fehlgeschlagen: " + error.message);
+                alert("Login fehlgeschlagen: Prüfe Benutzername/Passwort.");
                 btn.innerText = "Anmelden";
             }
         };
