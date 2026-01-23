@@ -1,12 +1,18 @@
-<div class="login-wrapper">
-    <div class="glass-card login-card">
-        <img src="Farmerfuzzys_logo.jpg" alt="Logo" class="login-logo">
-        <h1>Willkommen</h1>
-        <p>Bitte logge dich ein</p>
-        <input id="user" type="text" placeholder="Benutzername">
-        <input id="pass" type="password" placeholder="Passwort">
-        <button onclick="login()" id="loginBtn" class="btn-primary">Anmelden</button>
-        <br><br>
-        <a href="https://discord.gg/htUpYEtDfz" target="_blank" class="discord-link">Tritt unserem Discord bei!</a>
+<div class="login-container">
+    <div class="glass-card login-box">
+        <img src="Farmerfuzzys_logo.jpg" class="auth-logo">
+        <h1>FarmerFuzzys</h1>
+        <p>Mitglieder-Portal</p>
+        
+        <div class="input-group">
+            <input id="user" type="text" placeholder="Benutzername" required>
+            <input id="pass" type="password" placeholder="Passwort" required>
+        </div>
+        
+        <button onclick="login()" id="loginBtn" class="btn-primary">Einloggen</button>
+        
+        <a href="https://discord.gg/jNxqmwdC" target="_blank" class="discord-tag">
+            Join our Discord
+        </a>
     </div>
 </div>
