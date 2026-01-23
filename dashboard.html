@@ -1,12 +1,178 @@
-<div id="modUploadBox" class="glass-card" style="display:none; border: 1px solid var(--accent); margin-bottom: 20px;">
-    <h3>Neuen Mod hochladen</h3>
-    <input id="modName" placeholder="Mod Name">
-    <textarea id="modDesc" placeholder="Kurze Beschreibung des Mods..." style="width: 100%; background: #020617; color: white; border-radius: 6px; padding: 10px; margin-bottom: 10px; border: 1px solid #334155;"></textarea>
-    
-    <input id="modVersion" placeholder="Version (z.B. 1.0.0)">
-    <input id="modType" placeholder="Kategorie (z.B. Traktor, Map)">
-    
-    <label>Mod-Datei (.zip):</label> <input type="file" id="modFile" accept=".zip">
-    <label>Vorschaubild:</label> <input type="file" id="modImg" accept="image/*">
-    <button id="uploadBtn" onclick="uploadMod()" class="btn-primary">Veröffentlichen</button>
-</div>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | FarmerFuzzys</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+        <div class="sidebar-header" style="text-align:center; margin-bottom: 20px;">
+            <img src="Farmerfuzzys_logo.jpg" class="nav-logo" style="width: 60px; border-radius: 50%;">
+            <div style="font-weight: bold; margin-top: 10px;">FarmerFuzzys</div>
+        </div>
+        <nav class="side-nav">
+            <button onclick="showSection('profile')">👤 Profil</button>
+            <button onclick="showSection('mods')">🚜 Mods</button>
+            <div id="adminLinks" style="display:none;">
+                <hr>
+                <button onclick="showSection('admin')">⚙️ Mitglieder</button>
+            </div>
+            <button onclick="logout()" class="logout-btn" style="margin-top: 20px; color: var(--danger);">🚪 Logout</button>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <section id="sec-profile" class="content-section">
+            <h1 id="welcomeText">Wird geladen...</h1>
+            <div class="login-card" style="text-align: left; max-width: 500px; margin: 0;">
+                <h3>Profil-Einstellungen</h3>
+                <input id="changeMyName" placeholder="Neuer Anzeigename">
+                <button onclick="updateMyName()" class="btn-primary">Speichern</button>
+            </div>
+        </section>
+
+        <section id="sec-mods" class="content-section" style="display:none;">
+            <h1>Mod-Datenbank</h1>
+            <div id="modUploadBox" class="login-card" style="display:none; text-align: left; max-width: 100%; margin-bottom: 30px; border: 1px solid var(--accent);">
+                <h3>Neuen Mod hochladen</h3>
+                <input id="modName" placeholder="Mod Name">
+                <textarea id="modDesc" placeholder="Beschreibung des Mods..."></textarea>
+                <div style="display: flex; gap: 10px;">
+                    <input id="modVersion" placeholder="Version (v1.0)">
+                    <input id="modType" placeholder="Typ (z.B. Traktor)">
+                </div>
+                <label>Mod-Datei (.zip):</label> <input type="file" id="modFile" accept=".zip">
+                <label>Vorschaubild:</label> <input type="file" id="modImg" accept="image/*">
+                <button id="uploadBtn" onclick="uploadMod()" class="btn-primary">Veröffentlichen</button>
+            </div>
+            <div id="modGallery" class="mod-grid"></div>
+        </section>
+
+        <section id="sec-admin" class="content-section" style="display:none;">
+            <h1>Verwaltung</h1>
+            <div class="login-card" style="text-align: left; max-width: 100%;">
+                <h3>Neues Mitglied erstellen</h3>
+                <input id="newUser" placeholder="Username">
+                <input id="newPass" type="password" placeholder="Passwort">
+                <select id="newRole">
+                    <option value="user">User</option>
+                    <option value="modder">Modder</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <button onclick="createUser()" class="btn-primary">Erstellen</button>
+                <hr>
+                <div id="userList"></div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDiYOJWP4XMQRJ6b-RfJp6Aqxis7E-uA30",
+            authDomain: "farmerfuzzys-c32eb.firebaseapp.com",
+            projectId: "farmerfuzzys-c32eb",
+            storageBucket: "farmerfuzzys-c32eb.firebasestorage.app",
+            messagingSenderId: "842395157432",
+            appId: "1:842395157432:web:fd031d7cc0c2a6e69ec54d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        let userRole = "user";
+
+        window.showSection = (id) => {
+            document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
+            document.getElementById('sec-' + id).style.display = 'block';
+            if(id === 'mods') loadMods();
+            if(id === 'admin') loadUsers();
+        };
+
+        onAuthStateChanged(auth, async user => {
+            if (!user) { location.href = "index.html"; return; }
+            const snap = await getDoc(doc(db, "users", user.uid));
+            if (snap.exists()) {
+                const data = snap.data();
+                userRole = data.role;
+                document.getElementById('welcomeText').innerText = `Hallo, ${data.username}!`;
+                if (userRole === "admin") document.getElementById('adminLinks').style.display = "block";
+                if (userRole === "admin" || userRole === "modder") document.getElementById('modUploadBox').style.display = "block";
+            }
+        });
+
+        window.uploadMod = async () => {
+            const name = document.getElementById('modName').value;
+            const desc = document.getElementById('modDesc').value;
+            const file = document.getElementById('modFile').files[0];
+            const img = document.getElementById('modImg').files[0];
+            if(!name || !file) return alert("Name und Datei fehlen!");
+
+            const btn = document.getElementById('uploadBtn');
+            btn.innerText = "Hochladen..."; btn.disabled = true;
+
+            try {
+                const fPath = `mods/${Date.now()}_${file.name}`;
+                const fRef = ref(storage, fPath);
+                await uploadBytes(fRef, file);
+                const fileUrl = await getDownloadURL(fRef);
+
+                let imgUrl = "https://via.placeholder.com/150";
+                let iPath = "";
+                if(img) {
+                    iPath = `images/${Date.now()}_${img.name}`;
+                    const iRef = ref(storage, iPath);
+                    await uploadBytes(iRef, img);
+                    imgUrl = await getDownloadURL(iRef);
+                }
+
+                await addDoc(collection(db, "mods"), {
+                    name, description: desc, fileUrl, imgUrl, fileRefPath: fPath, imgRefPath: iPath,
+                    version: document.getElementById('modVersion').value || "v1.0",
+                    type: document.getElementById('modType').value || "Mod"
+                });
+                alert("Erfolgreich!"); location.reload();
+            } catch (e) { alert(e.message); btn.innerText = "Fehler"; btn.disabled = false; }
+        };
+
+        async function loadMods() {
+            const snap = await getDocs(collection(db, "mods"));
+            const gallery = document.getElementById('modGallery');
+            gallery.innerHTML = "";
+            snap.forEach(mDoc => {
+                const m = mDoc.data();
+                gallery.innerHTML += `
+                    <div class="mod-card">
+                        <img src="${m.imgUrl}">
+                        <div class="mod-info">
+                            <h4>${m.name}</h4>
+                            <p class="mod-desc-text">${m.description || 'Keine Beschreibung vorhanden.'}</p>
+                            <div style="font-size:0.8rem; margin-bottom:10px;">${m.type} | ${m.version}</div>
+                            <a href="${m.fileUrl}" target="_blank" class="download-btn">Download</a>
+                            ${userRole === 'admin' ? `<button onclick="deleteMod('${mDoc.id}','${m.fileRefPath}','${m.imgRefPath}')" style="margin-top:5px; background:none; color:red; border:none; cursor:pointer;">Löschen</button>` : ''}
+                        </div>
+                    </div>`;
+            });
+        }
+
+        window.deleteMod = async (id, fPath, iPath) => {
+            if(!confirm("Wirklich löschen?")) return;
+            await deleteDoc(doc(db, "mods", id));
+            if(fPath) await deleteObject(ref(storage, fPath));
+            if(iPath) await deleteObject(ref(storage, iPath));
+            loadMods();
+        };
+
+        window.logout = () => signOut(auth);
+    </script>
+</body>
+</html>
