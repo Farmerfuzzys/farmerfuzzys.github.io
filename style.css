@@ -1,98 +1,221 @@
+/* GRUNDLAGEN */
 :root {
     --sidebar-width: 260px;
     --main-bg: #0f172a;
     --sidebar-bg: #020617;
     --accent: #10b981;
-    --card-bg: rgba(30, 41, 59, 0.7);
+    --accent-hover: #059669;
+    --card-bg: #1e293b;
     --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --danger: #ef4444;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-    margin: 0;
-    font-family: 'Inter', sans-serif;
-    background: var(--main-bg);
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--main-bg);
     color: var(--text);
+    line-height: 1.5;
     display: flex;
+    min-height: 100vh;
 }
 
-/* Login-Seite Fix */
+/* LOGIN-BEREICH (Zentriert alles) */
 .login-container {
     position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
     background: var(--main-bg);
-    z-index: 9999; /* Überlagert alles andere beim Anmelden */
+    z-index: 1000;
 }
 
 .login-card {
-    width: 350px;
+    width: 100%;
+    max-width: 380px;
     padding: 40px;
-    background: var(--card-bg);
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.1);
+    background: var(--sidebar-bg);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
 }
 
-/* Sidebar & Main Layout */
+/* SIDEBAR NAVIGATION */
 .sidebar {
     width: var(--sidebar-width);
     height: 100vh;
-    background: var(--sidebar-bg);
+    background-color: var(--sidebar-bg);
     position: fixed;
-    padding: 20px;
-    border-right: 1px solid #1e293b;
+    left: 0;
+    top: 0;
+    padding: 30px 20px;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
 }
 
+.sidebar img {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    margin: 0 auto 25px;
+    display: block;
+    border: 2px solid var(--accent);
+}
+
+.side-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Buttons in der Sidebar - Das behebt die blauen Boxen */
+.side-nav button, .btn-nav {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 12px 15px;
+    text-align: left;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.side-nav button:hover {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent);
+}
+
+.logout-btn {
+    margin-top: auto;
+    color: var(--danger) !important;
+}
+
+.logout-btn:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+}
+
+/* HAUPTINHALT */
 .main-content {
     margin-left: var(--sidebar-width);
     padding: 40px;
-    width: 100%;
+    width: calc(100% - var(--sidebar-width));
 }
 
-/* Mod-Karten & Mitglieder-Elemente */
-.mod-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+.content-section {
+    max-width: 1100px;
+    margin: 0 auto;
 }
 
-.mod-card {
-    background: #1e293b;
-    border-radius: 15px;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.05);
+h1 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+    font-weight: 700;
 }
 
-.role-badge {
-    background: rgba(16, 185, 129, 0.2);
-    border: 1px solid var(--accent);
-    padding: 2px 8px;
-    border-radius: 5px;
-    font-size: 0.75rem;
-    margin-right: 5px;
-}
-
-/* Buttons */
-.btn-primary {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    width: 100%;
+/* FORMULARE & KARTEN */
+.card, .admin-panel, .profile-box {
+    background: var(--card-bg);
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 20px;
 }
 
 input, textarea, select {
     width: 100%;
-    padding: 10px;
+    padding: 12px 15px;
     margin: 10px 0;
-    background: #020617;
+    background: #0f172a;
     border: 1px solid #334155;
     color: white;
     border-radius: 8px;
+    font-size: 1rem;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+/* ROLLEN-TAGS (Discord Style) */
+.role-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 5px;
+    margin-top: 5px;
+}
+
+/* MOD GRID */
+.mod-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.mod-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.2s;
+}
+
+.mod-card:hover {
+    transform: translateY(-5px);
+}
+
+.mod-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.mod-info {
+    padding: 15px;
+}
+
+/* ALARM SECTION */
+.alarm-active {
+    border-left: 5px solid var(--danger);
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.1), transparent);
 }
