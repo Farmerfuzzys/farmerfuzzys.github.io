@@ -123,5 +123,30 @@ input, textarea, select {
     border-radius: 6px;
     box-sizing: border-box;
 }
+/* Rollen-Tags im Discord-Stil */
+.role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+.alarm-card {
+    border-left: 5px solid var(--danger) !important;
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.1), transparent);
+}
+
+/* Checkbox-Liste Styling */
+.checkbox-group {
+    background: #020617;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    margin: 10px 0;
+}
 
 textarea { height: 80px; resize: vertical; }
