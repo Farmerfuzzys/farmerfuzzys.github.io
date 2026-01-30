@@ -12,32 +12,33 @@ body {
     font-family: 'Segoe UI', sans-serif;
     background: var(--main);
     color: var(--text);
-    min-height: 100vh;
+    display: flex; /* Wichtig für die Aufteilung */
 }
 
-/* Login-Zentrierung */
+/* Login-Seite */
 .login-container {
+    width: 100vw;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    width: 100%;
+    background: var(--main);
 }
 
 .login-card {
     width: 100%;
     max-width: 400px;
     padding: 30px;
-    text-align: center;
     background: var(--card-bg);
     border-radius: 15px;
     border: 1px solid rgba(255,255,255,0.1);
     backdrop-filter: blur(10px);
+    text-align: center;
 }
 
-/* Sidebar & Content */
+/* Sidebar Fix */
 .sidebar {
-    width: 240px;
+    width: 260px;
     height: 100vh;
     background: var(--sidebar);
     padding: 20px;
@@ -45,18 +46,23 @@ body {
     left: 0;
     top: 0;
     border-right: 1px solid #1e293b;
+    z-index: 100;
 }
 
 .main-content {
-    margin-left: 280px;
+    margin-left: 260px; /* Exakt so breit wie die Sidebar */
     padding: 40px;
+    width: calc(100% - 260px);
+    box-sizing: border-box;
 }
 
-/* Mod-Karten */
+/* Dashboard Elemente */
+.content-section { width: 100%; max-width: 1000px; margin: 0 auto; }
+
 .mod-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
 }
 
 .mod-card {
@@ -64,11 +70,49 @@ body {
     border-radius: 12px;
     overflow: hidden;
     border: 1px solid rgba(255,255,255,0.05);
-    transition: transform 0.2s;
 }
 
-.mod-card:hover { transform: translateY(-5px); border-color: var(--accent); }
+.mod-card img { width: 100%; height: 160px; object-fit: cover; }
+.mod-info { padding: 15px; }
 
-.mod-card img { width: 100%; height: 180px; object-fit: cover; }
+/* Discord Style Badges */
+.role-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+    font-size: 0.8rem;
+    margin: 3px;
+}
 
-.mod-info
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+    margin-top: 10px;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    background: #020617;
+    border: 1px solid #334155;
+    color: white;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.checkbox-group {
+    background: rgba(0,0,0,0.3);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: left;
+    margin: 10px 0;
+}
