@@ -2,53 +2,49 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>FarmerFuzzys Dashboard</title>
+    <title>Dashboard | FarmerFuzzys</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <aside class="sidebar">
-        <img src="Farmerfuzzys_logo.jpg">
+        <img src="Farmerfuzzys_logo.jpg" style="width:60px; border-radius:50%; margin:0 auto 20px; display:block; border:2px solid var(--accent);">
         <nav class="side-nav">
             <button onclick="showSection('profile')">👤 Profil</button>
             <button onclick="showSection('mods')">🚜 Mods</button>
-            <button id="nav-alarm" onclick="showSection('alarm')" style="display:none; color:#ef4444;">🚨 Alarm Display</button>
+            <button id="nav-alarm" onclick="showSection('alarm')" style="display:none; color:#ef4444;">🚨 Alarm</button>
             <div id="adminLinks" style="display:none;">
                 <hr style="opacity:0.1; margin: 10px 0;">
                 <button onclick="showSection('admin')">⚙️ Mitglieder</button>
             </div>
-            <button onclick="logout()" style="margin-top:20px; color:#94a3b8;">🚪 Abmelden</button>
+            <button onclick="logout()" style="margin-top:20px;">🚪 Logout</button>
         </nav>
     </aside>
 
     <main class="main-content">
         <section id="sec-profile" class="content-section">
-            <h1>Dein Profil</h1>
-            <div class="card" style="max-width: 400px;">
-                <h3 id="welcomeText">Lade...</h3>
+            <h1 id="welcomeText">Lade Profil...</h1>
+            <div class="card" style="max-width:400px;">
                 <input id="changeName" placeholder="Neuer Name">
-                <button onclick="updateProfile()" class="btn-primary">Name ändern</button>
+                <button onclick="updateProfile()" class="btn-primary">Speichern</button>
             </div>
         </section>
 
         <section id="sec-admin" class="content-section" style="display:none;">
             <h1>Mitgliederverwaltung</h1>
             <div class="card">
-                <h3>Neuen User anlegen</h3>
                 <input id="newU" placeholder="Username">
                 <input id="newP" type="password" placeholder="Passwort">
-                <div style="margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                <div style="padding:10px; background:rgba(0,0,0,0.2); border-radius:8px; margin-bottom:10px;">
                     <label><input type="checkbox" class="r-check" value="Admin"> Admin</label><br>
                     <label><input type="checkbox" class="r-check" value="Modder"> Modder</label><br>
                     <label><input type="checkbox" class="r-check" value="AD"> Alarm Display</label>
                 </div>
                 <button onclick="addUser()" class="btn-primary">Erstellen</button>
-                <hr style="margin: 20px 0; opacity: 0.1;">
-                <div id="userList"></div>
+                <div id="userList" style="margin-top:20px;"></div>
             </div>
         </section>
-
-        <section id="sec-mods" class="content-section" style="display:none;"><h1>Mods</h1><p>Galerie aktiv</p></section>
+        
+        <section id="sec-mods" class="content-section" style="display:none;"><h1>Mods</h1></section>
         <section id="sec-alarm" class="content-section" style="display:none;"><h1>Alarm Monitor</h1></section>
     </main>
 
@@ -65,7 +61,6 @@
             messagingSenderId: "842395157432",
             appId: "1:842395157432:web:fd031d7cc0c2a6e69ec54d"
         };
-
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -77,46 +72,38 @@
         };
 
         onAuthStateChanged(auth, async user => {
-            if (!user) { location.href = "index.html"; return; }
+            if (!user) {
+                // Nur umleiten, wenn wir NICHT auf der index sind
+                if(!window.location.pathname.includes("index.html")) window.location.href = "index.html";
+                return;
+            }
             const snap = await getDoc(doc(db, "users", user.uid));
             if (snap.exists()) {
                 const data = snap.data();
-                // WICHTIG: Wir nutzen 'role' wie in deinem Screenshot
-                const roles = data.role || [];
-                document.getElementById('welcomeText').innerText = "Willkommen, " + (data.username || "Mitglied");
-                
-                if (roles.includes("Admin")) {
-                    document.getElementById('adminLinks').style.display = "block";
-                }
-                if (roles.includes("AD")) {
-                    document.getElementById('nav-alarm').style.display = "block";
-                }
+                const roles = data.role || []; // Benutzt 'role' aus deinem Screenshot
+                document.getElementById('welcomeText').innerText = "Hallo, " + (data.username || "Mitglied");
+                if (roles.includes("Admin")) document.getElementById('adminLinks').style.display = "block";
+                if (roles.includes("AD")) document.getElementById('nav-alarm').style.display = "block";
             }
         });
 
         window.updateProfile = async () => {
             const n = document.getElementById('changeName').value;
-            if(!n) return alert("Bitte Name eingeben");
-            try {
-                await updateDoc(doc(db, "users", auth.currentUser.uid), { username: n });
-                alert("Name geändert!");
-                location.reload();
-            } catch(e) { alert("Fehler: " + e.message); }
+            if(!n) return;
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { username: n });
+            alert("Name aktualisiert!"); location.reload();
         };
 
         window.addUser = async () => {
             const u = document.getElementById('newU').value.trim();
             const p = document.getElementById('newP').value;
             const r = Array.from(document.querySelectorAll('.r-check:checked')).map(c => c.value);
-            
             const tApp = initializeApp(firebaseConfig, "Secondary");
             try {
                 const res = await createUserWithEmailAndPassword(getAuth(tApp), u.toLowerCase() + "@farmerfuzzys.local", p);
-                // Wir speichern es als 'role', damit es zu deinem Screenshot passt
                 await setDoc(doc(db, "users", res.user.uid), { username: u, role: r });
                 await deleteApp(tApp);
-                alert("User erstellt!");
-                loadUsers();
+                alert("Erstellt!"); loadUsers();
             } catch(e) { alert("Fehler: " + e.message); }
         };
 
@@ -126,14 +113,11 @@
             list.innerHTML = "";
             snap.forEach(d => {
                 const u = d.data();
-                const roles = u.role || [];
-                list.innerHTML += `<div style="padding:10px; border-bottom:1px solid #334155;">
-                    <strong>${u.username}</strong> ${roles.map(r => `<span class="role-badge">${r}</span>`).join("")}
-                </div>`;
+                list.innerHTML += `<div style="padding:10px; border-bottom:1px solid #334155;">${u.username}</div>`;
             });
         }
 
-        window.logout = () => signOut(auth);
+        window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
     </script>
 </body>
 </html>
