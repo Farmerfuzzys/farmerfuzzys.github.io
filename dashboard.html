@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard | FarmerFuzzys</title>
+    <title>FarmerFuzzys Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -10,47 +10,54 @@
         <img src="Farmerfuzzys_logo.jpg">
         <nav class="side-nav">
             <button onclick="showSection('profile')">👤 Profil</button>
-            <button id="nav-alarm" onclick="showSection('alarm')" style="display:none; color:#ef4444;">🚨 Alarm</button>
             <div id="adminLinks" style="display:none;">
-                <hr style="opacity:0.1; margin: 10px 0;">
                 <button onclick="showSection('admin')">⚙️ Mitglieder</button>
             </div>
-            <button onclick="logout()" style="margin-top:20px;">🚪 Logout</button>
+            <button id="nav-alarm" onclick="showSection('alarm')" style="display:none; color:var(--danger);">🚨 Alarm Display</button>
+            <button onclick="logout()" style="margin-top:auto;">🚪 Abmelden</button>
         </nav>
     </aside>
 
     <main class="main-content">
         <section id="sec-profile" class="content-section">
-            <h1 id="welcomeText">Lade Profil...</h1>
-            <div class="card" style="max-width:400px;">
+            <h1 id="welcomeText">Willkommen</h1>
+            <div class="card" style="max-width: 450px;">
+                <h3>Anzeigename ändern</h3>
                 <input id="changeName" placeholder="Neuer Name">
-                <button onclick="updateProfile()" class="btn-primary">Name speichern</button>
+                <button onclick="updateProfile()" class="btn-primary">Speichern</button>
             </div>
         </section>
 
         <section id="sec-admin" class="content-section" style="display:none;">
             <h1>Mitgliederverwaltung</h1>
             <div class="card">
-                <h3>Neuer User</h3>
-                <input id="newU" placeholder="Username">
-                <input id="newP" type="password" placeholder="Passwort">
-                <div style="padding:10px; background:rgba(0,0,0,0.2); border-radius:8px; margin-bottom:10px;">
-                    <label><input type="checkbox" class="r-check" value="Admin"> Admin</label><br>
-                    <label><input type="checkbox" class="r-check" value="Modder"> Modder</label><br>
+                <h3>Neuen Benutzer anlegen</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <input id="newU" placeholder="Benutzername">
+                    <input id="newP" type="password" placeholder="Passwort">
+                </div>
+                <div style="margin: 15px 0; display: flex; gap: 20px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 10px;">
+                    <label><input type="checkbox" class="r-check" value="Admin"> Admin</label>
+                    <label><input type="checkbox" class="r-check" value="Modder"> Modder</label>
                     <label><input type="checkbox" class="r-check" value="AD"> Alarm Display</label>
                 </div>
-                <button onclick="addUser()" class="btn-primary">Erstellen</button>
-                <div id="userList" style="margin-top:20px;"></div>
+                <button onclick="addUser()" class="btn-primary">Benutzer erstellen</button>
             </div>
+
+            <h3 style="margin-top: 40px;">Registrierte Mitglieder</h3>
+            <div id="userList"></div>
         </section>
-        
-        <section id="sec-alarm" class="content-section" style="display:none;"><h1>🚨 Alarm Monitor</h1></section>
+
+        <section id="sec-alarm" class="content-section" style="display:none;">
+            <h1>🚨 Alarm Monitor</h1>
+            <div class="card">Hier werden Alarme für das Display verwaltet.</div>
+        </section>
     </main>
 
     <script type="module">
         import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDiYOJWP4XMQRJ6b-RfJp6Aqxis7E-uA30",
@@ -71,51 +78,63 @@
         };
 
         onAuthStateChanged(auth, async user => {
-            if (!user) {
-                if(!window.location.href.includes("index.html")) window.location.replace("index.html");
-                return;
-            }
+            if (!user) { window.location.replace("index.html"); return; }
             const snap = await getDoc(doc(db, "users", user.uid));
             if (snap.exists()) {
                 const data = snap.data();
                 const roles = data.role || [];
-                document.getElementById('welcomeText').innerText = "Hallo, " + (data.username || "Mitglied");
+                document.getElementById('welcomeText').innerText = "Hallo, " + (data.username || "Farmer");
                 if (roles.includes("Admin")) document.getElementById('adminLinks').style.display = "block";
                 if (roles.includes("AD")) document.getElementById('nav-alarm').style.display = "block";
             }
         });
 
-        window.updateProfile = async () => {
-            const n = document.getElementById('changeName').value;
-            if(!n) return;
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { username: n });
-            alert("Gespeichert!"); location.reload();
-        };
-
         window.addUser = async () => {
             const u = document.getElementById('newU').value.trim();
             const p = document.getElementById('newP').value;
             const r = Array.from(document.querySelectorAll('.r-check:checked')).map(c => c.value);
+            
+            if(!u || !p) return alert("Bitte Name und Passwort eingeben!");
+
             const tApp = initializeApp(firebaseConfig, "Secondary");
             try {
                 const res = await createUserWithEmailAndPassword(getAuth(tApp), u.toLowerCase() + "@farmerfuzzys.local", p);
                 await setDoc(doc(db, "users", res.user.uid), { username: u, role: r });
                 await deleteApp(tApp);
-                alert("Mitglied erstellt!"); loadUsers();
+                alert("User " + u + " erfolgreich erstellt!");
+                loadUsers();
             } catch(e) { alert("Fehler: " + e.message); }
+        };
+
+        window.deleteUser = async (uid, name) => {
+            if(confirm("Möchtest du " + name + " wirklich löschen? (Nur Datenbank-Eintrag)")) {
+                await deleteDoc(doc(db, "users", uid));
+                loadUsers();
+            }
         };
 
         async function loadUsers() {
             const list = document.getElementById('userList');
+            list.innerHTML = "<p>Lade Mitglieder...</p>";
             const snap = await getDocs(collection(db, "users"));
             list.innerHTML = "";
             snap.forEach(d => {
                 const u = d.data();
-                list.innerHTML += `<div style="padding:10px; border-bottom:1px solid #334155;">${u.username}</div>`;
+                const roles = u.role || [];
+                list.innerHTML += `
+                    <div class="user-item">
+                        <div class="user-info">
+                            <b>${u.username}</b> 
+                            ${roles.map(r => `<span class="badge">${r}</span>`).join("")}
+                        </div>
+                        <div class="user-actions">
+                            <button class="btn-delete" onclick="deleteUser('${d.id}', '${u.username}')">Löschen</button>
+                        </div>
+                    </div>`;
             });
         }
 
-        window.logout = () => signOut(auth).then(() => window.location.replace("index.html"));
+        window.logout = () => signOut(auth);
     </script>
 </body>
 </html>
