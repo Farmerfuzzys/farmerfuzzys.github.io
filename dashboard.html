@@ -10,7 +10,6 @@
         <img src="Farmerfuzzys_logo.jpg" style="width:60px; border-radius:50%; margin:0 auto 20px; display:block; border:2px solid var(--accent);">
         <nav class="side-nav">
             <button onclick="showSection('profile')">👤 Profil</button>
-            <button onclick="showSection('mods')">🚜 Mods</button>
             <button id="nav-alarm" onclick="showSection('alarm')" style="display:none; color:#ef4444;">🚨 Alarm</button>
             <div id="adminLinks" style="display:none;">
                 <hr style="opacity:0.1; margin: 10px 0;">
@@ -32,6 +31,7 @@
         <section id="sec-admin" class="content-section" style="display:none;">
             <h1>Mitgliederverwaltung</h1>
             <div class="card">
+                <h3>Neuen User anlegen</h3>
                 <input id="newU" placeholder="Username">
                 <input id="newP" type="password" placeholder="Passwort">
                 <div style="padding:10px; background:rgba(0,0,0,0.2); border-radius:8px; margin-bottom:10px;">
@@ -44,8 +44,7 @@
             </div>
         </section>
         
-        <section id="sec-mods" class="content-section" style="display:none;"><h1>Mods</h1></section>
-        <section id="sec-alarm" class="content-section" style="display:none;"><h1>Alarm Monitor</h1></section>
+        <section id="sec-alarm" class="content-section" style="display:none;"><h1>🚨 Alarm Monitor</h1></section>
     </main>
 
     <script type="module">
@@ -71,16 +70,19 @@
             if(id === 'admin') loadUsers();
         };
 
+        // Stabiler Auth-Check gegen Neulade-Schleife
         onAuthStateChanged(auth, async user => {
             if (!user) {
-                // Nur umleiten, wenn wir NICHT auf der index sind
-                if(!window.location.pathname.includes("index.html")) window.location.href = "index.html";
+                // Nur umleiten, wenn wir nicht sowieso auf der index sind
+                if(!window.location.href.includes("index.html")) {
+                    window.location.replace("index.html");
+                }
                 return;
             }
             const snap = await getDoc(doc(db, "users", user.uid));
             if (snap.exists()) {
                 const data = snap.data();
-                const roles = data.role || []; // Benutzt 'role' aus deinem Screenshot
+                const roles = data.role || [];
                 document.getElementById('welcomeText').innerText = "Hallo, " + (data.username || "Mitglied");
                 if (roles.includes("Admin")) document.getElementById('adminLinks').style.display = "block";
                 if (roles.includes("AD")) document.getElementById('nav-alarm').style.display = "block";
@@ -90,25 +92,30 @@
         window.updateProfile = async () => {
             const n = document.getElementById('changeName').value;
             if(!n) return;
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { username: n });
-            alert("Name aktualisiert!"); location.reload();
+            try {
+                await updateDoc(doc(db, "users", auth.currentUser.uid), { username: n });
+                alert("Erfolgreich!"); location.reload();
+            } catch(e) { alert("Fehler: " + e.message); }
         };
 
         window.addUser = async () => {
             const u = document.getElementById('newU').value.trim();
             const p = document.getElementById('newP').value;
             const r = Array.from(document.querySelectorAll('.r-check:checked')).map(c => c.value);
+            if(!u || !p) return alert("Daten fehlen!");
+
             const tApp = initializeApp(firebaseConfig, "Secondary");
             try {
                 const res = await createUserWithEmailAndPassword(getAuth(tApp), u.toLowerCase() + "@farmerfuzzys.local", p);
                 await setDoc(doc(db, "users", res.user.uid), { username: u, role: r });
                 await deleteApp(tApp);
-                alert("Erstellt!"); loadUsers();
+                alert("User erstellt!"); loadUsers();
             } catch(e) { alert("Fehler: " + e.message); }
         };
 
         async function loadUsers() {
             const list = document.getElementById('userList');
+            list.innerHTML = "Lade...";
             const snap = await getDocs(collection(db, "users"));
             list.innerHTML = "";
             snap.forEach(d => {
@@ -117,7 +124,7 @@
             });
         }
 
-        window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
+        window.logout = () => signOut(auth).then(() => window.location.replace("index.html"));
     </script>
 </body>
 </html>
