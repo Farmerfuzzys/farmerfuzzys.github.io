@@ -14,19 +14,18 @@ body {
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    overflow-x: hidden;
 }
 
-/* LOGIN ZENTRIERUNG */
+/* LOGIN ZENTRIERUNG - Absolut sicher */
 .login-container {
     position: fixed;
     top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    width: 100%; height: 100%;
     background: var(--bg);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 2000;
+    z-index: 9999;
 }
 
 .login-card {
@@ -37,26 +36,21 @@ body {
     text-align: center;
     width: 90%;
     max-width: 400px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-/* DASHBOARD LAYOUT */
+/* DASHBOARD */
 .sidebar {
     width: var(--sb-width);
     height: 100vh;
     background: var(--nav-bg);
     position: fixed;
-    left: 0; top: 0;
     padding: 20px;
     border-right: 1px solid #334155;
-    z-index: 100;
 }
 
 .main-content {
     margin-left: var(--sb-width);
     padding: 40px;
-    width: calc(100% - var(--sb-width));
-    min-height: 100vh;
 }
 
 .side-nav button {
@@ -70,7 +64,6 @@ body {
     border-radius: 8px;
     margin-bottom: 5px;
     font-size: 1rem;
-    transition: 0.2s;
 }
 
 .side-nav button:hover {
