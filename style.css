@@ -1,110 +1,102 @@
 :root {
-    --sb-width: 260px;
-    --bg: #0f172a;
-    --nav-bg: #020617;
+    --bg: #0b0f1a;
+    --card-bg: rgba(30, 41, 59, 0.7);
     --accent: #10b981;
-    --card: #1e293b;
-    --text: #f8fafc;
+    --accent-glow: rgba(16, 185, 129, 0.4);
+    --danger: #ef4444;
+    --text: #f1f5f9;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.3s ease; }
 
 body {
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Inter', -apple-system, sans-serif;
     background: var(--bg);
+    background-image: radial-gradient(circle at top right, #1e293b, #0b0f1a);
     color: var(--text);
     min-height: 100vh;
-}
-
-/* LOGIN ZENTRIERUNG - Absolut sicher */
-.login-container {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: var(--bg);
     display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
 }
 
-.login-card {
-    background: var(--nav-bg);
-    padding: 40px;
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.1);
-    text-align: center;
-    width: 90%;
-    max-width: 400px;
-}
-
-/* DASHBOARD */
+/* Sidebar */
 .sidebar {
-    width: var(--sb-width);
+    width: 260px;
+    background: rgba(2, 6, 23, 0.8);
+    backdrop-filter: blur(10px);
     height: 100vh;
-    background: var(--nav-bg);
     position: fixed;
-    padding: 20px;
-    border-right: 1px solid #334155;
+    padding: 30px 20px;
+    border-right: 1px solid rgba(255,255,255,0.05);
 }
 
-.main-content {
-    margin-left: var(--sb-width);
-    padding: 40px;
+.sidebar img {
+    width: 100px; height: 100px; border-radius: 50%;
+    margin: 0 auto 30px; display: block;
+    border: 3px solid var(--accent);
+    box-shadow: 0 0 20px var(--accent-glow);
 }
 
 .side-nav button {
-    width: 100%;
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    padding: 12px;
-    text-align: left;
-    cursor: pointer;
-    border-radius: 8px;
-    margin-bottom: 5px;
-    font-size: 1rem;
+    width: 100%; background: transparent; border: none;
+    color: #94a3b8; padding: 14px; text-align: left;
+    cursor: pointer; border-radius: 12px; margin-bottom: 8px;
+    font-size: 1rem; display: flex; align-items: center; gap: 12px;
 }
 
 .side-nav button:hover {
     background: rgba(16, 185, 129, 0.1);
     color: var(--accent);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+    transform: translateX(5px);
 }
+
+/* Content */
+.main-content { margin-left: 260px; padding: 50px; width: 100%; }
 
 .card {
-    background: var(--card);
-    padding: 25px;
-    border-radius: 12px;
-    border: 1px solid #334155;
-    margin-bottom: 20px;
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    padding: 30px; border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
+
+h1 { font-size: 2rem; margin-bottom: 30px; letter-spacing: -1px; }
+
+/* Inputs & Buttons */
+input {
+    width: 100%; padding: 14px; margin: 10px 0;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white; border-radius: 10px; outline: none;
+}
+
+input:focus { border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
 
 .btn-primary {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 12px;
-    border-radius: 8px;
-    width: 100%;
-    font-weight: bold;
-    cursor: pointer;
+    background: var(--accent); color: white; border: none;
+    padding: 14px; border-radius: 10px; font-weight: 600;
+    cursor: pointer; width: 100%; margin-top: 10px;
 }
 
-input {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    background: #0f172a;
-    border: 1px solid #334155;
-    color: white;
-    border-radius: 8px;
+.btn-primary:hover { filter: brightness(1.2); box-shadow: 0 0 20px var(--accent-glow); }
+
+/* Admin User List */
+.user-item {
+    background: rgba(0,0,0,0.2); padding: 20px;
+    border-radius: 12px; margin-top: 15px;
+    display: flex; justify-content: space-between; align-items: center;
+    border: 1px solid rgba(255,255,255,0.05);
 }
-.sidebar img {
-    width: 80px;      /* Festgelegte Breite */
-    height: 80px;     /* Festgelegte Höhe */
-    object-fit: cover; /* Verhindert Verzerrung */
-    border-radius: 50%;
-    display: block;
-    margin: 10px auto 20px;
-    border: 2px solid var(--accent);
+
+.user-info b { color: var(--accent); font-size: 1.1rem; }
+.user-actions { display: flex; gap: 10px; }
+
+.btn-edit { background: #334155; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
+.btn-delete { background: var(--danger); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
+
+.badge {
+    font-size: 0.7rem; padding: 2px 8px; border-radius: 4px;
+    background: var(--accent-glow); color: var(--accent);
+    margin-left: 5px; text-transform: uppercase;
 }
