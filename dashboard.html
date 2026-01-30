@@ -6,64 +6,83 @@
     <title>Dashboard | FarmerFuzzys</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="dashboard-body">
+<body>
 
     <aside class="sidebar">
-        <div class="sidebar-header" style="text-align:center; margin-bottom: 20px;">
-            <img src="Farmerfuzzys_logo.jpg" class="nav-logo" style="width: 60px; border-radius: 50%;">
+        <div style="text-align:center; margin-bottom: 20px;">
+            <img src="Farmerfuzzys_logo.jpg" style="width: 60px; border-radius: 50%;">
             <div style="font-weight: bold; margin-top: 10px;">FarmerFuzzys</div>
         </div>
-        <nav class="side-nav">
-            <button onclick="showSection('profile')">👤 Profil</button>
-            <button onclick="showSection('mods')">🚜 Mods</button>
+        <nav class="side-nav" style="display: flex; flex-direction: column; gap: 10px;">
+            <button class="btn-primary" style="background:none; text-align:left;" onclick="showSection('profile')">👤 Profil</button>
+            <button class="btn-primary" style="background:none; text-align:left;" onclick="showSection('mods')">🚜 Mods</button>
+            <button id="nav-alarm" class="btn-primary" style="display:none; background: #991b1b; text-align:left;" onclick="showSection('alarm')">🚨 Alarm Display</button>
+            
             <div id="adminLinks" style="display:none;">
-                <hr>
-                <button onclick="showSection('admin')">⚙️ Mitglieder</button>
+                <hr style="opacity:0.1;">
+                <button class="btn-primary" style="background:none; text-align:left;" onclick="showSection('admin')">⚙️ Mitglieder</button>
             </div>
-            <button onclick="logout()" class="logout-btn" style="margin-top: 20px; color: var(--danger);">🚪 Logout</button>
+            <button onclick="logout()" style="background:none; border:none; color:var(--danger); cursor:pointer; text-align:left; padding:12px;">🚪 Logout</button>
         </nav>
     </aside>
 
     <main class="main-content">
         <section id="sec-profile" class="content-section">
             <h1 id="welcomeText">Wird geladen...</h1>
-            <div class="login-card" style="text-align: left; max-width: 500px; margin: 0;">
-                <h3>Profil-Einstellungen</h3>
-                <input id="changeMyName" placeholder="Neuer Anzeigename">
+            <div class="login-card" style="text-align: left; margin: 0;">
+                <h3>Anzeigename ändern</h3>
+                <input id="changeMyName" placeholder="Neuer Name">
                 <button onclick="updateMyName()" class="btn-primary">Speichern</button>
+            </div>
+        </section>
+
+        <section id="sec-alarm" class="content-section" style="display:none;">
+            <h1>Einsatz-Monitor</h1>
+            <div class="login-card" style="max-width: 100%; text-align: left; border-left: 5px solid var(--danger);">
+                <h2 style="color: var(--danger);">Status: Einsatzbereit</h2>
+                <hr style="opacity: 0.1;">
+                <p><strong>Deine Qualifikationen:</strong></p>
+                <div id="user-quals-list"></div>
             </div>
         </section>
 
         <section id="sec-mods" class="content-section" style="display:none;">
             <h1>Mod-Datenbank</h1>
-            <div id="modUploadBox" class="login-card" style="display:none; text-align: left; max-width: 100%; margin-bottom: 30px; border: 1px solid var(--accent);">
-                <h3>Neuen Mod hochladen</h3>
-                <input id="modName" placeholder="Mod Name">
-                <textarea id="modDesc" placeholder="Beschreibung des Mods..."></textarea>
-                <div style="display: flex; gap: 10px;">
-                    <input id="modVersion" placeholder="Version (v1.0)">
-                    <input id="modType" placeholder="Typ (z.B. Traktor)">
-                </div>
-                <label>Mod-Datei (.zip):</label> <input type="file" id="modFile" accept=".zip">
-                <label>Vorschaubild:</label> <input type="file" id="modImg" accept="image/*">
+            <div id="modUploadBox" class="login-card" style="display:none; max-width: 100%; text-align: left; margin-bottom: 20px; border: 1px solid var(--accent);">
+                <h3>Mod hochladen</h3>
+                <input id="modName" placeholder="Name">
+                <textarea id="modDesc" placeholder="Beschreibung..."></textarea>
+                <input id="modVersion" placeholder="Version">
+                <input id="modType" placeholder="Typ (z.B. Map)">
+                <label>Datei (.zip):</label> <input type="file" id="modFile" accept=".zip">
+                <label>Bild:</label> <input type="file" id="modImg" accept="image/*">
                 <button id="uploadBtn" onclick="uploadMod()" class="btn-primary">Veröffentlichen</button>
             </div>
             <div id="modGallery" class="mod-grid"></div>
         </section>
 
         <section id="sec-admin" class="content-section" style="display:none;">
-            <h1>Verwaltung</h1>
-            <div class="login-card" style="text-align: left; max-width: 100%;">
-                <h3>Neues Mitglied erstellen</h3>
+            <h1>Mitgliederverwaltung</h1>
+            <div class="login-card" style="max-width: 100%; text-align: left;">
+                <h3>Neues Mitglied / Rollen vergeben</h3>
                 <input id="newUser" placeholder="Username">
                 <input id="newPass" type="password" placeholder="Passwort">
-                <select id="newRole">
-                    <option value="user">User</option>
-                    <option value="modder">Modder</option>
-                    <option value="admin">Admin</option>
-                </select>
-                <button onclick="createUser()" class="btn-primary">Erstellen</button>
-                <hr>
+                
+                <p><strong>Rollen:</strong></p>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" class="role-check" value="Admin"> Admin</label><br>
+                    <label><input type="checkbox" class="role-check" value="Modder"> Modder</label><br>
+                    <label><input type="checkbox" class="role-check" value="AD"> Alarm Display (AD)</label>
+                </div>
+
+                <p><strong>Lehrgänge:</strong></p>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" class="qual-check" value="AGT"> AGT</label><br>
+                    <label><input type="checkbox" class="qual-check" value="GF"> Gruppenführer</label><br>
+                    <label><input type="checkbox" class="qual-check" value="ZF"> Zugführer</label>
+                </div>
+                <button onclick="createUser()" class="btn-primary">Speichern</button>
+                <hr style="margin: 20px 0; opacity: 0.1;">
                 <div id="userList"></div>
             </div>
         </section>
@@ -89,7 +108,7 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        let userRole = "user";
+        let currentUserRoles = [];
 
         window.showSection = (id) => {
             document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
@@ -103,29 +122,31 @@
             const snap = await getDoc(doc(db, "users", user.uid));
             if (snap.exists()) {
                 const data = snap.data();
-                userRole = data.role;
+                currentUserRoles = data.roles || [];
+                const quals = data.quals || [];
+
                 document.getElementById('welcomeText').innerText = `Hallo, ${data.username}!`;
-                if (userRole === "admin") document.getElementById('adminLinks').style.display = "block";
-                if (userRole === "admin" || userRole === "modder") document.getElementById('modUploadBox').style.display = "block";
+
+                if (currentUserRoles.includes("Admin")) document.getElementById('adminLinks').style.display = "block";
+                if (currentUserRoles.includes("Admin") || currentUserRoles.includes("Modder")) document.getElementById('modUploadBox').style.display = "block";
+                
+                if (currentUserRoles.includes("AD")) {
+                    document.getElementById('nav-alarm').style.display = "block";
+                    document.getElementById('user-quals-list').innerHTML = quals.map(q => `<span class="role-badge">${q}</span>`).join("");
+                }
             }
         });
 
         window.uploadMod = async () => {
             const name = document.getElementById('modName').value;
-            const desc = document.getElementById('modDesc').value;
             const file = document.getElementById('modFile').files[0];
             const img = document.getElementById('modImg').files[0];
-            if(!name || !file) return alert("Name und Datei fehlen!");
-
-            const btn = document.getElementById('uploadBtn');
-            btn.innerText = "Hochladen..."; btn.disabled = true;
-
+            if(!name || !file) return alert("Fehler!");
             try {
                 const fPath = `mods/${Date.now()}_${file.name}`;
                 const fRef = ref(storage, fPath);
                 await uploadBytes(fRef, file);
                 const fileUrl = await getDownloadURL(fRef);
-
                 let imgUrl = "https://via.placeholder.com/150";
                 let iPath = "";
                 if(img) {
@@ -134,43 +155,50 @@
                     await uploadBytes(iRef, img);
                     imgUrl = await getDownloadURL(iRef);
                 }
-
                 await addDoc(collection(db, "mods"), {
-                    name, description: desc, fileUrl, imgUrl, fileRefPath: fPath, imgRefPath: iPath,
-                    version: document.getElementById('modVersion').value || "v1.0",
-                    type: document.getElementById('modType').value || "Mod"
+                    name, description: document.getElementById('modDesc').value,
+                    fileUrl, imgUrl, fileRefPath: fPath, imgRefPath: iPath,
+                    version: document.getElementById('modVersion').value,
+                    type: document.getElementById('modType').value
                 });
-                alert("Erfolgreich!"); location.reload();
-            } catch (e) { alert(e.message); btn.innerText = "Fehler"; btn.disabled = false; }
+                location.reload();
+            } catch (e) { alert(e.message); }
         };
 
         async function loadMods() {
             const snap = await getDocs(collection(db, "mods"));
-            const gallery = document.getElementById('modGallery');
-            gallery.innerHTML = "";
-            snap.forEach(mDoc => {
-                const m = mDoc.data();
-                gallery.innerHTML += `
-                    <div class="mod-card">
-                        <img src="${m.imgUrl}">
-                        <div class="mod-info">
-                            <h4>${m.name}</h4>
-                            <p class="mod-desc-text">${m.description || 'Keine Beschreibung vorhanden.'}</p>
-                            <div style="font-size:0.8rem; margin-bottom:10px;">${m.type} | ${m.version}</div>
-                            <a href="${m.fileUrl}" target="_blank" class="download-btn">Download</a>
-                            ${userRole === 'admin' ? `<button onclick="deleteMod('${mDoc.id}','${m.fileRefPath}','${m.imgRefPath}')" style="margin-top:5px; background:none; color:red; border:none; cursor:pointer;">Löschen</button>` : ''}
-                        </div>
-                    </div>`;
+            const g = document.getElementById('modGallery');
+            g.innerHTML = "";
+            snap.forEach(d => {
+                const m = d.data();
+                g.innerHTML += `<div class="mod-card"><img src="${m.imgUrl}"><div class="mod-info"><h4>${m.name}</h4><p style="font-size:0.8rem; color:#94a3b8;">${m.description}</p><a href="${m.fileUrl}" class="btn-primary" style="display:block; text-decoration:none; text-align:center; margin-top:10px;">Download</a></div></div>`;
             });
         }
 
-        window.deleteMod = async (id, fPath, iPath) => {
-            if(!confirm("Wirklich löschen?")) return;
-            await deleteDoc(doc(db, "mods", id));
-            if(fPath) await deleteObject(ref(storage, fPath));
-            if(iPath) await deleteObject(ref(storage, iPath));
-            loadMods();
+        window.createUser = async () => {
+            const n = document.getElementById('newUser').value;
+            const p = document.getElementById('newPass').value;
+            const r = Array.from(document.querySelectorAll('.role-check:checked')).map(c => c.value);
+            const q = Array.from(document.querySelectorAll('.qual-check:checked')).map(c => c.value);
+            const tempApp = initializeApp(firebaseConfig, "Temp");
+            const tempAuth = getAuth(tempApp);
+            try {
+                const c = await createUserWithEmailAndPassword(tempAuth, n.toLowerCase() + "@farmerfuzzys.local", p);
+                await setDoc(doc(db, "users", c.user.uid), { username: n, roles: r, quals: q });
+                await signOut(tempAuth); await deleteApp(tempApp);
+                alert("Erstellt!"); loadUsers();
+            } catch (e) { alert(e.message); }
         };
+
+        async function loadUsers() {
+            const snap = await getDocs(collection(db, "users"));
+            const l = document.getElementById('userList');
+            l.innerHTML = "";
+            snap.forEach(d => {
+                const u = d.data();
+                l.innerHTML += `<div style="padding:10px; border-bottom:1px solid #334155;">${u.username} ${(u.roles || []).map(r => `<span class="role-badge">${r}</span>`).join("")}</div>`;
+            });
+        }
 
         window.logout = () => signOut(auth);
     </script>
