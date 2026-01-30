@@ -15,7 +15,7 @@ body {
     min-height: 100vh;
 }
 
-/* Zentrierung für Login (index.html) */
+/* Login-Zentrierung */
 .login-container {
     display: flex;
     justify-content: center;
@@ -35,7 +35,7 @@ body {
     backdrop-filter: blur(10px);
 }
 
-/* Layout für Dashboard (dashboard.html) */
+/* Sidebar & Content */
 .sidebar {
     width: 240px;
     height: 100vh;
@@ -48,11 +48,11 @@ body {
 }
 
 .main-content {
-    margin-left: 280px; /* Sidebar + Abstand */
+    margin-left: 280px;
     padding: 40px;
 }
 
-/* Mod-Grid (Modhoster Style) */
+/* Mod-Karten */
 .mod-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -65,88 +65,10 @@ body {
     overflow: hidden;
     border: 1px solid rgba(255,255,255,0.05);
     transition: transform 0.2s;
-    display: flex;
-    flex-direction: column;
 }
 
-.mod-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--accent);
-}
+.mod-card:hover { transform: translateY(-5px); border-color: var(--accent); }
 
-.mod-card img {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-}
+.mod-card img { width: 100%; height: 180px; object-fit: cover; }
 
-.mod-info {
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-}
-
-.mod-info h4 { margin: 0 0 10px 0; }
-.mod-desc-text { color: #94a3b8; font-size: 0.9rem; margin-bottom: 15px; flex-grow: 1; }
-
-/* Buttons & Inputs */
-.btn-primary {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    width: 100%;
-}
-
-.download-btn {
-    display: block;
-    background: var(--accent);
-    color: white;
-    text-align: center;
-    padding: 10px;
-    text-decoration: none;
-    border-radius: 6px;
-    font-weight: bold;
-}
-
-input, textarea, select {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    background: #020617;
-    border: 1px solid #334155;
-    color: white;
-    border-radius: 6px;
-    box-sizing: border-box;
-}
-/* Rollen-Tags im Discord-Stil */
-.role-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    background: rgba(16, 185, 129, 0.2);
-    border: 1px solid var(--accent);
-    border-radius: 4px;
-    font-size: 0.75rem;
-    margin-right: 5px;
-    margin-bottom: 5px;
-}
-
-.alarm-card {
-    border-left: 5px solid var(--danger) !important;
-    background: linear-gradient(90deg, rgba(239, 68, 68, 0.1), transparent);
-}
-
-/* Checkbox-Liste Styling */
-.checkbox-group {
-    background: #020617;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #334155;
-    margin: 10px 0;
-}
-
-textarea { height: 80px; resize: vertical; }
+.mod-info
