@@ -2,62 +2,24 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>FarmerFuzzys Dashboard</title>
+    <title>Login | FarmerFuzzys</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div class="dashboard-wrapper">
-        <aside class="sidebar">
-            <img src="Farmerfuzzys_logo.jpg">
-            <nav class="side-nav">
-                <button onclick="showSection('profile')">👤 Profil</button>
-                <button onclick="showSection('mods')">🚜 Mods</button>
-                <button id="nav-alarm" onclick="showSection('alarm')" style="display:none; color:#ef4444;">🚨 Alarm Display</button>
-                <div id="adminLinks" style="display:none;">
-                    <hr style="opacity:0.1; margin: 10px 0;">
-                    <button onclick="showSection('admin')">⚙️ Mitglieder</button>
-                </div>
-                <button onclick="logout()" style="margin-top:20px; color:#94a3b8;">🚪 Logout</button>
-            </nav>
-        </aside>
+<body class="login-page">
 
-        <main class="main-content">
-            <section id="sec-profile" class="content-section">
-                <h1>Dein Profil</h1>
-                <div class="card" style="max-width: 450px;">
-                    <h3 id="welcomeText" style="margin-bottom:15px;">Lade...</h3>
-                    <input id="changeName" placeholder="Neuer Anzeigename">
-                    <button onclick="updateProfile()" class="btn-primary">Name speichern</button>
-                </div>
-            </section>
-
-            <section id="sec-admin" class="content-section" style="display:none;">
-                <h1>Mitgliederverwaltung</h1>
-                <div class="card">
-                    <h3>Neuen User erstellen</h3>
-                    <input id="newU" placeholder="Username (z.B. Hans)">
-                    <input id="newP" type="password" placeholder="Passwort">
-                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin: 10px 0;">
-                        <strong>Rollen:</strong><br>
-                        <label><input type="checkbox" class="r-check" value="Admin"> Admin</label><br>
-                        <label><input type="checkbox" class="r-check" value="Modder"> Modder</label><br>
-                        <label><input type="checkbox" class="r-check" value="AD"> Alarm Display</label>
-                    </div>
-                    <button onclick="addUser()" class="btn-primary">User Erstellen</button>
-                    <hr style="margin: 25px 0; opacity: 0.1;">
-                    <div id="userList"></div>
-                </div>
-            </section>
-
-            <section id="sec-mods" class="content-section" style="display:none;"><h1>Mods</h1></section>
-            <section id="sec-alarm" class="content-section" style="display:none;"><h1>Alarm Monitor</h1></section>
-        </main>
+    <div class="login-container">
+        <div class="login-card">
+            <img src="Farmerfuzzys_logo.jpg" style="width: 80px; border-radius: 50%; border: 2px solid var(--accent); margin-bottom: 20px;">
+            <h1>Anmelden</h1>
+            <input id="user" type="text" placeholder="Benutzername">
+            <input id="pass" type="password" placeholder="Passwort">
+            <button onclick="login()" class="btn-primary">Einloggen</button>
+        </div>
     </div>
 
     <script type="module">
-        import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDiYOJWP4XMQRJ6b-RfJp6Aqxis7E-uA30",
@@ -69,65 +31,18 @@
         };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
 
-        window.showSection = (id) => {
-            document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
-            document.getElementById('sec-' + id).style.display = 'block';
-            if(id === 'admin') loadUsers();
-        };
-
-        onAuthStateChanged(auth, async user => {
-            if (!user) { location.href = "index.html"; return; }
-            const snap = await getDoc(doc(db, "users", user.uid));
-            if (snap.exists()) {
-                const data = snap.data();
-                const roles = data.role || []; // Hier 'role' wie im Screenshot
-                document.getElementById('welcomeText').innerText = "Hallo, " + (data.username || "Mitglied");
-                if (roles.includes("Admin")) document.getElementById('adminLinks').style.display = "block";
-                if (roles.includes("AD")) document.getElementById('nav-alarm').style.display = "block";
+        window.login = async () => {
+            const u = document.getElementById('user').value.toLowerCase().trim();
+            const p = document.getElementById('pass').value;
+            try {
+                // Wir nutzen replace(), um die History sauber zu halten
+                await signInWithEmailAndPassword(auth, u + "@farmerfuzzys.local", p);
+                window.location.replace("dashboard.html");
+            } catch (e) {
+                alert("Login fehlgeschlagen! Überprüfe Name und Passwort.");
             }
-        });
-
-        window.updateProfile = async () => {
-            const n = document.getElementById('changeName').value;
-            if(!n) return;
-            try {
-                await updateDoc(doc(db, "users", auth.currentUser.uid), { username: n });
-                alert("Geändert!"); location.reload();
-            } catch(e) { alert(e.message); }
         };
-
-        window.addUser = async () => {
-            const u = document.getElementById('newU').value.trim();
-            const p = document.getElementById('newP').value;
-            const r = Array.from(document.querySelectorAll('.r-check:checked')).map(c => c.value);
-            if(!u || !p) return alert("Daten unvollständig!");
-
-            const tApp = initializeApp(firebaseConfig, "Secondary");
-            try {
-                const res = await createUserWithEmailAndPassword(getAuth(tApp), u.toLowerCase() + "@farmerfuzzys.local", p);
-                await setDoc(doc(db, "users", res.user.uid), { username: u, role: r });
-                await deleteApp(tApp);
-                alert("Benutzer erstellt!"); loadUsers();
-            } catch(e) { alert("Fehler: " + e.message); }
-        };
-
-        async function loadUsers() {
-            const list = document.getElementById('userList');
-            const snap = await getDocs(collection(db, "users"));
-            list.innerHTML = "";
-            snap.forEach(d => {
-                const u = d.data();
-                const roles = u.role || [];
-                list.innerHTML += `<div style="padding:12px; border-bottom:1px solid #334155; display:flex; justify-content:space-between;">
-                    <strong>${u.username}</strong>
-                    <div>${roles.map(r => `<span class="role-badge">${r}</span>`).join("")}</div>
-                </div>`;
-            });
-        }
-
-        window.logout = () => { signOut(auth); location.href="index.html"; };
     </script>
 </body>
 </html>
