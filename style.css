@@ -1,102 +1,110 @@
 :root {
-    --bg: #0b0f1a;
-    --card-bg: rgba(30, 41, 59, 0.7);
-    --accent: #10b981;
-    --accent-glow: rgba(16, 185, 129, 0.4);
-    --danger: #ef4444;
-    --text: #f1f5f9;
+    --bg-dark: #05070a;
+    --panel-bg: rgba(13, 17, 23, 0.8);
+    --accent-color: #00f2ff; /* Cyan Neon */
+    --accent-glow: rgba(0, 242, 255, 0.3);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --text-main: #e6edf3;
+    --text-dim: #8b949e;
+    --danger: #ff4b4b;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.3s ease; }
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
 
 body {
-    font-family: 'Inter', -apple-system, sans-serif;
-    background: var(--bg);
-    background-image: radial-gradient(circle at top right, #1e293b, #0b0f1a);
-    color: var(--text);
-    min-height: 100vh;
+    background-color: var(--bg-dark);
+    background-image: 
+        linear-gradient(var(--border-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+    background-size: 50px 50px;
+    color: var(--text-main);
     display: flex;
+    min-height: 100vh;
 }
 
-/* Sidebar */
+/* Sidebar Modern */
 .sidebar {
-    width: 260px;
-    background: rgba(2, 6, 23, 0.8);
-    backdrop-filter: blur(10px);
-    height: 100vh;
+    width: 240px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: 40px 0;
     position: fixed;
-    padding: 30px 20px;
-    border-right: 1px solid rgba(255,255,255,0.05);
+    height: 100vh;
 }
 
 .sidebar img {
-    width: 100px; height: 100px; border-radius: 50%;
-    margin: 0 auto 30px; display: block;
-    border: 3px solid var(--accent);
-    box-shadow: 0 0 20px var(--accent-glow);
+    width: 70px; height: 70px; border-radius: 12px;
+    margin: 0 auto 40px; display: block;
+    filter: drop-shadow(0 0 10px var(--accent-glow));
+    border: 1px solid var(--accent-color);
 }
 
-.side-nav button {
-    width: 100%; background: transparent; border: none;
-    color: #94a3b8; padding: 14px; text-align: left;
-    cursor: pointer; border-radius: 12px; margin-bottom: 8px;
-    font-size: 1rem; display: flex; align-items: center; gap: 12px;
+.nav-link {
+    width: 100%;
+    padding: 15px 30px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: 0.3s;
 }
 
-.side-nav button:hover {
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--accent);
-    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
-    transform: translateX(5px);
+.nav-link:hover {
+    color: var(--accent-color);
+    background: rgba(0, 242, 255, 0.05);
+    border-left: 3px solid var(--accent-color);
 }
 
-/* Content */
-.main-content { margin-left: 260px; padding: 50px; width: 100%; }
-
-.card {
-    background: var(--card-bg);
-    backdrop-filter: blur(12px);
-    padding: 30px; border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.1);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+/* Main Content */
+.main-area {
+    margin-left: 240px;
+    padding: 60px;
+    width: 100%;
 }
 
-h1 { font-size: 2rem; margin-bottom: 30px; letter-spacing: -1px; }
+.glass-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px; /* Eckig wirkt moderner/technischer */
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
 
-/* Inputs & Buttons */
+h1 { font-weight: 300; font-size: 2.5rem; margin-bottom: 40px; letter-spacing: -1px; }
+
+/* Form Elements */
 input {
-    width: 100%; padding: 14px; margin: 10px 0;
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: white; border-radius: 10px; outline: none;
+    background: #0d1117;
+    border: 1px solid var(--border-color);
+    color: white;
+    padding: 12px 15px;
+    border-radius: 4px;
+    width: 100%;
+    margin-bottom: 15px;
 }
 
-input:focus { border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+input:focus { border-color: var(--accent-color); outline: none; box-shadow: 0 0 15px var(--accent-glow); }
 
-.btn-primary {
-    background: var(--accent); color: white; border: none;
-    padding: 14px; border-radius: 10px; font-weight: 600;
-    cursor: pointer; width: 100%; margin-top: 10px;
+.action-btn {
+    background: var(--accent-color);
+    color: #000;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
 }
 
-.btn-primary:hover { filter: brightness(1.2); box-shadow: 0 0 20px var(--accent-glow); }
+.action-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px var(--accent-glow); }
 
-/* Admin User List */
-.user-item {
-    background: rgba(0,0,0,0.2); padding: 20px;
-    border-radius: 12px; margin-top: 15px;
-    display: flex; justify-content: space-between; align-items: center;
-    border: 1px solid rgba(255,255,255,0.05);
-}
-
-.user-info b { color: var(--accent); font-size: 1.1rem; }
-.user-actions { display: flex; gap: 10px; }
-
-.btn-edit { background: #334155; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
-.btn-delete { background: var(--danger); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
-
-.badge {
-    font-size: 0.7rem; padding: 2px 8px; border-radius: 4px;
-    background: var(--accent-glow); color: var(--accent);
-    margin-left: 5px; text-transform: uppercase;
-}
+.delete-btn { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 5px 10px; cursor: pointer; }
+.delete-btn:hover { background: var(--danger); color: white; }
