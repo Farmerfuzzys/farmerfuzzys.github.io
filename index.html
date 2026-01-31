@@ -7,16 +7,12 @@
 </head>
 <body class="login-body">
     <div class="login-card">
-        </div>
-<body class="login-body">
-    <div class="login-card">
-        <img src="Farmerfuzzys_logo.jpg" style="width: 80px; margin-bottom: 20px; border-radius: 12px; border: 1px solid var(--accent-color);">
-        <h1 style="font-size: 1.8rem; margin-bottom: 20px;">Anmelden</h1>
-        <input id="user" type="text" placeholder="Benutzername">
+        <img src="Farmerfuzzys_logo.jpg">
+        <h2 style="margin-bottom: 20px; font-weight: 300;">Authorized Access</h2>
+        <input id="user" type="text" placeholder="Nutzername">
         <input id="pass" type="password" placeholder="Passwort">
-        <button onclick="login()" class="action-btn" style="margin-top: 10px;">Einloggen</button>
+        <button onclick="login()" class="action-btn">Login</button>
     </div>
-</body>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -37,12 +33,9 @@
             const u = document.getElementById('user').value.toLowerCase().trim();
             const p = document.getElementById('pass').value;
             try {
-                // Wir nutzen replace(), um die History sauber zu halten
                 await signInWithEmailAndPassword(auth, u + "@farmerfuzzys.local", p);
                 window.location.replace("dashboard.html");
-            } catch (e) {
-                alert("Login fehlgeschlagen! Überprüfe Name und Passwort.");
-            }
+            } catch (e) { alert("Zugriff verweigert."); }
         };
     </script>
 </body>
