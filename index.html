@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Login | FarmerFuzzys</title>
+    <title>Anmeldung | FarmerFuzzys</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="login-page">
     <div class="login-card">
         <img src="Farmerfuzzys_logo.jpg">
-        <h2 style="margin-bottom: 20px;">Authorized Access</h2>
+        <h2 style="margin-bottom: 20px;">Systemzugang</h2>
         <input id="email" type="text" placeholder="Benutzername">
         <input id="pass" type="password" placeholder="Passwort">
-        <button onclick="doLogin()" class="btn-primary">Einloggen</button>
+        <button onclick="doLogin()" class="btn-primary">Anmelden</button>
     </div>
 
     <script type="module">
@@ -35,7 +35,7 @@
             try {
                 await signInWithEmailAndPassword(auth, user + "@farmerfuzzys.local", pass);
                 window.location.href = "dashboard.html";
-            } catch (e) { alert("Login fehlgeschlagen!"); }
+            } catch (e) { alert("Anmeldung fehlgeschlagen! Bitte Daten prüfen."); }
         };
     </script>
 </body>
