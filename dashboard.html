@@ -7,62 +7,32 @@
 </head>
 <body>
     <nav class="sidebar">
-        <div style="padding: 20px; text-align: center;">
-            <img src="Farmerfuzzys_logo.jpg" style="width:70px; border-radius:8px;">
-        </div>
+        <div style="padding: 20px; text-align: center;"><img src="Farmerfuzzys_logo.jpg" style="width:60px; border-radius:8px;"></div>
         <button class="nav-btn" onclick="openTab('home')">Startseite</button>
         <button class="nav-btn" onclick="openTab('profile')">Profil Einstellungen</button>
-        <div id="admin-nav" style="display:none;">
-            <button class="nav-btn" onclick="openTab('admin')">Admin Management</button>
-        </div>
-        <button id="nav-alarm" class="nav-btn" onclick="openTab('alarm')" style="display:none; color:var(--danger);">Alarm Display</button>
+        <div id="admin-nav" style="display:none;"><button class="nav-btn" onclick="openTab('admin')">Admin Management</button></div>
+        <div id="alarm-admin-nav" style="display:none;"><button class="nav-btn" onclick="openTab('alarm')" style="color:var(--danger)">Alarm Steuerung</button></div>
         <button class="nav-btn" onclick="logout()" style="margin-top:auto;">Abmelden</button>
     </nav>
 
     <main class="main-content">
         <section id="tab-home" class="tab-content">
-            <h1>Startseite</h1>
-            <div class="hub-grid">
-                <div class="hub-card" onclick="openTab('profile')">
-                    <h3>Profil</h3>
-                    <p style="color:#8b949e;">Namen und Einstellungen ändern</p>
-                </div>
-                <div id="card-admin" class="hub-card" onclick="openTab('admin')" style="display:none;">
-                    <h3>Mitglieder</h3>
-                    <p style="color:#8b949e;">Benutzer verwalten & Rechte vergeben</p>
-                </div>
-                <div id="card-alarm" class="hub-card" onclick="openTab('alarm')" style="display:none; border-color:var(--danger);">
-                    <h3 style="color:var(--danger);">Alarm Display</h3>
-                    <p style="color:#8b949e;">Systemweiten Alarm auslösen</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="tab-profile" class="tab-content" style="display:none;">
-            <h1>Profil Einstellungen</h1>
-            <div class="card" style="max-width: 400px;">
-                <p id="display-name" style="margin-bottom: 10px; font-weight: bold; color: var(--accent);">Lade Profil...</p>
-                <input id="new-name" placeholder="Neuer Anzeigename">
-                <button onclick="saveName()" class="btn-primary">Name speichern</button>
-            </div>
+            <h1>Willkommen zurück</h1>
+            <p id="welcome-msg" style="margin-top:10px; color:var(--accent);"></p>
         </section>
 
         <section id="tab-admin" class="tab-content" style="display:none;">
             <h1>Admin Management</h1>
             <div class="card">
-                <h3>Neues Mitglied anlegen</h3>
+                <h3>Mitglied hinzufügen</h3>
                 <div style="display:flex; gap:10px; margin-top:15px;">
-                    <input id="reg-user" placeholder="Benutzername">
+                    <input id="reg-user" placeholder="Name">
                     <input id="reg-pass" type="password" placeholder="Passwort">
                 </div>
-                <div class="role-grid">
-                    <div id="check-admin" class="role-item" onclick="this.classList.toggle('active')">Admin-Rang</div>
-                    <div id="check-ad" class="role-item" onclick="this.classList.toggle('active')">Alarm Display</div>
-                </div>
-                <button onclick="registerUser()" class="btn-primary">Mitglied erstellen</button>
+                <button onclick="registerUser()" class="btn-primary">Anlegen</button>
             </div>
             <div class="card">
-                <h3>Eingetragene Mitglieder</h3>
+                <h3>Mitglieder & Rollen</h3>
                 <div id="user-list"></div>
             </div>
         </section>
@@ -70,8 +40,9 @@
         <section id="tab-alarm" class="tab-content" style="display:none;">
             <h1>Alarm Display Steuerung</h1>
             <div class="card">
-                <input id="alarmMsg" placeholder="Alarm-Nachricht eingeben...">
-                <button onclick="sendAlarm()" class="btn-primary" style="background:var(--danger); color:white;">Alarm jetzt auslösen</button>
+                <input id="einsatz-ort" placeholder="Einsatzort">
+                <input id="einsatz-grund" placeholder="Einsatzgrund">
+                <button onclick="triggerAlarm()" class="btn-primary" style="background:var(--danger); color:white;">Alarm auslösen</button>
             </div>
         </section>
     </main>
@@ -79,7 +50,7 @@
     <script type="module">
         import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDiYOJWP4XMQRJ6b-RfJp6Aqxis7E-uA30",
@@ -100,85 +71,47 @@
         };
 
         onAuthStateChanged(auth, async user => {
-    if(!user) { window.location.href = "index.html"; return; }
-    const snap = await getDoc(doc(db, "users", user.uid));
-    
-    if(snap.exists()){
-        const d = snap.data();
-        const roles = d.role || [];
+            if(!user) { window.location.href = "index.html"; return; }
+            const snap = await getDoc(doc(db, "users", user.uid));
+            if(snap.exists()){
+                const d = snap.data();
+                const roles = d.role || [];
+                if(roles.includes("Gesperrt")) {
+                    document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:100px;'>KONTO GESPERRT</h1>";
+                    return;
+                }
+                document.getElementById('welcome-msg').innerText = "Angemeldet als: " + d.username;
+                if(roles.includes("Admin")) document.getElementById('admin-nav').style.display = 'block';
+                if(roles.includes("Admin") || roles.includes("Alarm Display Admin")) document.getElementById('alarm-admin-nav').style.display = 'block';
+            }
+        });
 
-        // 1. PRÜFUNG: Ist der User gesperrt?
-        if(roles.includes("Gesperrt")) {
-            // Zeigt nur die Sperrmeldung und versteckt das Menü
-            document.querySelector('.main-content').innerHTML = `
-                <div class="card" style="border-color: var(--danger); text-align: center; margin-top: 50px;">
-                    <h1 style="color: var(--danger);">Konto gesperrt</h1>
-                    <p>Du hast keinen Zugriff mehr auf das System. Bitte kontaktiere einen Administrator.</p>
-                    <button onclick="logout()" class="btn-primary" style="margin-top: 20px; max-width: 200px;">Abmelden</button>
-                </div>`;
-            document.getElementById('admin-nav').style.display = 'none';
-            document.getElementById('nav-alarm').style.display = 'none';
-            return;
+        async function loadUsers() {
+            const list = document.getElementById('user-list');
+            const snap = await getDocs(collection(db, "users"));
+            list.innerHTML = "";
+            snap.forEach(d => {
+                const u = d.data();
+                const roles = u.role || [];
+                list.innerHTML += `
+                    <div style="display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid var(--border); align-items:center;">
+                        <span>${u.username}</span>
+                        <div style="display:flex; gap:5px;">
+                            <button onclick="toggleRole('${d.id}', ${JSON.stringify(roles)}, 'Admin')" class="glow-btn ${roles.includes('Admin') ? 'active-admin' : ''}">Admin</button>
+                            <button onclick="toggleRole('${d.id}', ${JSON.stringify(roles)}, 'Alarm Display Admin')" class="glow-btn ${roles.includes('Alarm Display Admin') ? 'active-alarm-admin' : ''}">Alarm Admin</button>
+                            <button onclick="toggleRole('${d.id}', ${JSON.stringify(roles)}, 'AD')" class="glow-btn ${roles.includes('AD') ? 'active-ad' : ''}">AD</button>
+                            <button onclick="toggleRole('${d.id}', ${JSON.stringify(roles)}, 'Gesperrt')" class="glow-btn ${roles.includes('Gesperrt') ? 'active-blocked' : ''}">Sperren</button>
+                        </div>
+                    </div>`;
+            });
         }
 
-        // 2. REGULÄRE ANZEIGE (wenn nicht gesperrt)
-        document.getElementById('display-name').innerText = "Aktueller Name: " + (d.username || "Gast");
-        
-        if(roles.includes("Admin")) {
-            document.getElementById('admin-nav').style.display = 'block';
-            document.getElementById('card-admin').style.display = 'block';
-        }
-        if(roles.includes("AD")) {
-            document.getElementById('nav-alarm').style.display = 'block';
-            document.getElementById('card-alarm').style.display = 'block';
-        }
-    }
-});
+        window.toggleRole = async (uid, currentRoles, role) => {
+            let newRoles = currentRoles.includes(role) ? currentRoles.filter(r => r !== role) : [...currentRoles, role];
+            await updateDoc(doc(db, "users", uid), { role: newRoles });
+            loadUsers();
+        };
 
-// FUNKTION: Mitgliederliste laden (jetzt mit "Sperren" Knopf)
-async function loadUsers() {
-    const list = document.getElementById('user-list');
-    const snap = await getDocs(collection(db, "users"));
-    list.innerHTML = "";
-    
-    snap.forEach(d => {
-        const data = d.data();
-        const userId = d.id;
-        const roles = data.role || [];
-        const isGesperrt = roles.includes("Gesperrt");
-        
-        list.innerHTML += `
-            <div style="padding:15px; border-bottom:1px solid var(--border); background: ${isGesperrt ? 'rgba(255, 75, 75, 0.05)' : 'transparent'}">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <span style="font-weight:bold; color: ${isGesperrt ? 'var(--danger)' : 'white'}">
-                        ${data.username} ${isGesperrt ? '(GESPERRT)' : ''}
-                    </span>
-                </div>
-                <div style="display:flex; gap:8px; flex-wrap: wrap;">
-                    <button onclick="updateRoles('${userId}', ${JSON.stringify(roles)}, 'Admin')" class="role-badge ${roles.includes('Admin') ? 'active' : ''}">Admin</button>
-                    <button onclick="updateRoles('${userId}', ${JSON.stringify(roles)}, 'AD')" class="role-badge ${roles.includes('AD') ? 'active' : ''}">Alarm Display</button>
-                    <button onclick="updateRoles('${userId}', ${JSON.stringify(roles)}, 'Gesperrt')" class="role-badge ${isGesperrt ? 'active' : ''}" style="${isGesperrt ? 'border-color:var(--danger); color:var(--danger);' : ''}">Sperren</button>
-                </div>
-            </div>`;
-    });
-}
-
-// FUNKTION: Ränge aktualisieren (Hinzufügen/Entfernen)
-window.updateRoles = async (uid, currentRoles, roleToToggle) => {
-    let newRoles = [...currentRoles];
-    if (newRoles.includes(roleToToggle)) {
-        newRoles = newRoles.filter(r => r !== roleToToggle);
-    } else {
-        newRoles.push(roleToToggle);
-    }
-
-    try {
-        await updateDoc(doc(db, "users", uid), { role: newRoles });
-        loadUsers();
-    } catch (e) {
-        alert("Fehler: Keine Berechtigung.");
-    }
-};
         window.logout = () => signOut(auth);
     </script>
 </body>
