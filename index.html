@@ -2,13 +2,13 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Systemzugang | FarmerFuzzys</title>
+    <title>Anmeldung | FarmerFuzzys</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="login-page">
     <div class="login-card">
-        <img src="Farmerfuzzys_logo.jpg" style="width: 80px; margin-bottom: 15px; border-radius: 12px;">
-        <h2 style="margin-bottom: 20px;">Anmelden</h2>
+        <img src="Farmerfuzzys_logo.jpg" style="width: 100px; border-radius: 12px; margin-bottom: 20px;">
+        <h2>Systemzugang</h2>
         <input id="email" type="text" placeholder="Benutzername">
         <input id="pass" type="password" placeholder="Passwort">
         <button onclick="doLogin()" class="btn-primary">Einloggen</button>
@@ -39,7 +39,7 @@
             try {
                 await signInWithEmailAndPassword(auth, user + "@farmerfuzzys.local", pass);
                 window.location.href = "dashboard.html";
-            } catch (e) { alert("Fehler: Login fehlgeschlagen."); }
+            } catch (e) { alert("Login fehlgeschlagen!"); }
         };
     </script>
 </body>
