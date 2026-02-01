@@ -1,49 +1,106 @@
-<script type="module">
-    // ... Firebase Importe (auth, db etc.) ...
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard | FarmerFuzzys</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <img src="Farmerfuzzys_logo.jpg" style="width:80px; margin:20px auto; border-radius:10px; display:block;">
+        <button class="nav-btn" onclick="showTab('home')">Startseite</button>
+        <button class="nav-btn" onclick="showTab('admin')" id="nav-admin" style="display:none;">Mitglieder</button>
+        <button class="nav-btn" onclick="showTab('alarm')" id="nav-alarm-admin" style="display:none; color:#ff4b4b;">Alarm Senden</button>
+        <button class="nav-btn" onclick="logout()" style="margin-top:auto;">Abmelden</button>
+    </nav>
 
-    // FUNKTION: Mitglieder laden & Rollen-Leuchten
-    async function loadUsers() {
-        const list = document.getElementById('user-list');
-        const snap = await getDocs(collection(db, "users"));
-        list.innerHTML = "";
-        
-        snap.forEach(d => {
-            const u = d.data();
-            const roles = u.role || [];
-            
-            list.innerHTML += `
-                <div class="user-row">
-                    <span>${u.username}</span>
-                    <div class="role-grid">
-                        <button onclick="toggleRole('${d.id}', ${JSON.stringify(roles)}, 'Admin')" 
-                            class="glow-btn ${roles.includes('Admin') ? 'active-admin' : ''}">Admin</button>
-                        
-                        <button onclick="toggleRole('${d.id}', ${JSON.stringify(roles)}, 'Alarm Display Admin')" 
-                            class="glow-btn ${roles.includes('Alarm Display Admin') ? 'active-alarm-admin' : ''}">Alarm Admin</button>
-                        
-                        <button onclick="toggleRole('${d.id}', ${JSON.stringify(roles)}, 'AD')" 
-                            class="glow-btn ${roles.includes('AD') ? 'active-ad' : ''}">AD</button>
-                        
-                        <button onclick="toggleRole('${d.id}', ${JSON.stringify(roles)}, 'Gesperrt')" 
-                            class="glow-btn ${roles.includes('Gesperrt') ? 'active-blocked' : ''}">Sperren</button>
-                    </div>
-                </div>`;
+    <main class="main-content">
+        <section id="tab-home" class="tab">
+            <h1 id="welcome-title">Willkommen</h1>
+            <p id="user-info"></p>
+        </section>
+
+        <section id="tab-admin" class="tab" style="display:none;">
+            <h1>Mitgliederverwaltung</h1>
+            <div class="card">
+                <h3>Neuen Benutzer anlegen</h3>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <input id="new-user" placeholder="Username">
+                    <input id="new-pass" type="password" placeholder="Passwort">
+                </div>
+                <button onclick="registerNewUser()" class="btn-primary">Erstellen</button>
+            </div>
+            <div class="card">
+                <h3>Registrierte Mitglieder</h3>
+                <div id="user-list"></div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, getDocs, collection, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDiYOJWP4XMQRJ6b-RfJp6Aqxis7E-uA30",
+            authDomain: "farmerfuzzys-c32eb.firebaseapp.com",
+            projectId: "farmerfuzzys-c32eb",
+            storageBucket: "farmerfuzzys-c32eb.firebasestorage.app",
+            messagingSenderId: "842395157432",
+            appId: "1:842395157432:web:fd031d7cc0c2a6e69ec54d"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        onAuthStateChanged(auth, async user => {
+            if(!user) { window.location.href = "index.html"; return; }
+            const snap = await getDoc(doc(db, "users", user.uid));
+            if(snap.exists()) {
+                const d = snap.data();
+                const roles = d.role || [];
+                if(roles.includes("Gesperrt")) { document.body.innerHTML = "<h1>ZUGRIFF GESPERRT</h1>"; return; }
+                
+                document.getElementById('user-info').innerText = "Angemeldet als: " + d.username;
+                if(roles.includes("Admin")) document.getElementById('nav-admin').style.display = 'block';
+                if(roles.includes("Admin") || roles.includes("Alarm Display Admin")) document.getElementById('nav-alarm-admin').style.display = 'block';
+            }
         });
-    }
 
-    // FUNKTION: Rollen umschalten
-    window.toggleRole = async (uid, currentRoles, role) => {
-        let newRoles = currentRoles.includes(role) 
-            ? currentRoles.filter(r => r !== role) 
-            : [...currentRoles, role];
-        
-        try {
+        window.showTab = (tab) => {
+            document.querySelectorAll('.tab').forEach(t => t.style.display = 'none');
+            document.getElementById('tab-'+tab).style.display = 'block';
+            if(tab === 'admin') loadUsers();
+        };
+
+        window.loadUsers = async () => {
+            const list = document.getElementById('user-list');
+            const snap = await getDocs(collection(db, "users"));
+            list.innerHTML = "";
+            snap.forEach(d => {
+                const u = d.data();
+                const roles = u.role || [];
+                list.innerHTML += `
+                    <div class="user-item">
+                        <span>${u.username}</span>
+                        <div class="roles">
+                            <button onclick="changeRole('${d.id}', ${JSON.stringify(roles)}, 'Admin')" class="glow-btn ${roles.includes('Admin') ? 'gold' : ''}">Admin</button>
+                            <button onclick="changeRole('${d.id}', ${JSON.stringify(roles)}, 'Alarm Display Admin')" class="glow-btn ${roles.includes('Alarm Display Admin') ? 'blue' : ''}">Alarm Admin</button>
+                            <button onclick="changeRole('${d.id}', ${JSON.stringify(roles)}, 'AD')" class="glow-btn ${roles.includes('AD') ? 'green' : ''}">AD</button>
+                            <button onclick="changeRole('${d.id}', ${JSON.stringify(roles)}, 'Gesperrt')" class="glow-btn ${roles.includes('Gesperrt') ? 'red' : ''}">Sperren</button>
+                        </div>
+                    </div>`;
+            });
+        };
+
+        window.changeRole = async (uid, current, role) => {
+            let newRoles = current.includes(role) ? current.filter(r => r !== role) : [...current, role];
             await updateDoc(doc(db, "users", uid), { role: newRoles });
-            loadUsers(); // Liste aktualisieren
-        } catch (e) {
-            alert("Fehler: Du hast keine Admin-Rechte im System!");
-        }
-    };
+            loadUsers();
+        };
 
-    // ... Restliche Funktionen (registerUser, logout) ...
-</script>
+        window.logout = () => signOut(auth);
+    </script>
+</body>
+</html>
