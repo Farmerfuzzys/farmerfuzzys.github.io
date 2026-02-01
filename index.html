@@ -2,19 +2,19 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Anmeldung | FarmerFuzzys</title>
+    <title>Anmelden | FarmerFuzzys</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="login-page">
     <div class="login-card">
-        <img src="Farmerfuzzys_logo.jpg" style="width: 100px; border-radius: 12px; margin-bottom: 20px;">
+        <img src="Farmerfuzzys_logo.jpg" alt="Logo" style="width:120px; border-radius:15px; margin-bottom:20px;">
         <h2>Systemzugang</h2>
         <input id="email" type="text" placeholder="Benutzername">
         <input id="pass" type="password" placeholder="Passwort">
         <button onclick="doLogin()" class="btn-primary">Einloggen</button>
         
         <a href="https://discord.gg/hPTcV6NaVw" target="_blank" class="discord-box">
-            <span>Unser Discord</span>
+            Unser Discord
         </a>
     </div>
 
@@ -39,7 +39,7 @@
             try {
                 await signInWithEmailAndPassword(auth, user + "@farmerfuzzys.local", pass);
                 window.location.href = "dashboard.html";
-            } catch (e) { alert("Login fehlgeschlagen!"); }
+            } catch (e) { alert("Login fehlgeschlagen! Name oder Passwort falsch."); }
         };
     </script>
 </body>
