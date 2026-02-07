@@ -2,17 +2,17 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Anmelden | FarmerFuzzys</title>
+    <title>Login | FarmerFuzzys</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="login-page">
+<body class="login-body">
     <div class="login-card">
-        <img src="Farmerfuzzys_logo.jpg" alt="Logo">
-        <h2>Systemzugang</h2>
-        <input id="email" type="text" placeholder="Benutzername">
-        <input id="pass" type="password" placeholder="Passwort">
-        <button onclick="doLogin()" class="btn-primary">Einloggen</button>
-        <a href="https://discord.gg/hPTcV6NaVw" target="_blank" class="discord-box">Unser Discord</a>
+        <img src="Farmerfuzzys_logo.jpg" alt="Logo" class="logo">
+        <h2>Einsatz-Portal</h2>
+        <input type="text" id="email" placeholder="Benutzername">
+        <input type="password" id="pass" placeholder="Passwort">
+        <button onclick="doLogin()" class="btn-primary">Anmelden</button>
+        <a href="https://discord.gg/hPTcV6NaVw" target="_blank" class="discord-btn">Unser Discord</a>
     </div>
 
     <script type="module">
@@ -36,7 +36,7 @@
             try {
                 await signInWithEmailAndPassword(auth, user + "@farmerfuzzys.local", pass);
                 window.location.href = "dashboard.html";
-            } catch (e) { alert("Fehler: Login fehlgeschlagen."); }
+            } catch (e) { alert("Login fehlgeschlagen!"); }
         };
     </script>
 </body>
