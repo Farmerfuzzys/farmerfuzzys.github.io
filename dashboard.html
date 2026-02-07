@@ -10,30 +10,30 @@
         <img src="Farmerfuzzys_logo.jpg" class="nav-logo">
         <button class="nav-btn" onclick="showTab('home')">Startseite</button>
         <button class="nav-btn" onclick="showTab('admin')" id="nav-admin" style="display:none;">Mitglieder</button>
-        <button class="nav-btn" onclick="showTab('alarm')" id="nav-alarm" style="display:none; color:#ff4b4b;">Alarm Senden</button>
         <button class="nav-btn" onclick="logout()" style="margin-top:auto;">Abmelden</button>
     </nav>
 
     <main class="main-content">
         <div id="tab-home" class="tab">
-            <h1>Willkommen zurück</h1>
-            <p id="user-welcome" style="color:var(--accent); margin-top:10px;"></p>
+            <h1 id="welcome-text">Willkommen zurück</h1>
+            <div class="button-grid">
+                <div id="card-ad" class="big-card" style="display:none;" onclick="location.href='alarm_display.html'">
+                    <span class="icon">📺</span>
+                    <h3>Alarm Display</h3>
+                    <p>Einsatzmonitor öffnen</p>
+                </div>
+                <div id="card-admin" class="big-card" style="display:none;" onclick="showTab('admin')">
+                    <span class="icon">👥</span>
+                    <h3>Verwaltung</h3>
+                    <p>Mitglieder & Rollen</p>
+                </div>
+            </div>
         </div>
 
         <div id="tab-admin" class="tab" style="display:none;">
             <h1>Mitgliederverwaltung</h1>
             <div class="card">
-                <h3>Mitglieder & Rollen</h3>
-                <div id="user-list">Lade Liste...</div>
-            </div>
-        </div>
-        
-        <div id="tab-alarm" class="tab" style="display:none;">
-            <h1>Alarm auslösen</h1>
-            <div class="card">
-                <input id="a-ort" placeholder="Einsatzort">
-                <input id="a-grund" placeholder="Einsatzgrund">
-                <button onclick="sendAlarm()" class="btn-primary" style="background:#ff4b4b;">ALARM ABSCHICKEN</button>
+                <div id="user-list">Lade Mitglieder...</div>
             </div>
         </div>
     </main>
@@ -41,7 +41,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, getDocs, collection, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, getDocs, collection, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDiYOJWP4XMQRJ6b-RfJp6Aqxis7E-uA30",
@@ -55,66 +55,59 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Prüfen wer eingeloggt ist und Menü zeigen
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) { window.location.href = "index.html"; return; }
-            
+        onAuthStateChanged(auth, async user => {
+            if(!user) { window.location.href = "index.html"; return; }
             const snap = await getDoc(doc(db, "users", user.uid));
-            if (snap.exists()) {
-                const data = snap.data();
-                const roles = data.role || [];
+            if(snap.exists()){
+                const d = snap.data();
+                const roles = d.role || [];
+                document.getElementById('welcome-text').innerText = `Willkommen zurück, ${d.username}`;
                 
-                document.getElementById('user-welcome').innerText = "Angemeldet als: " + data.username;
-
-                // Knöpfe einblenden je nach Rolle
-                if (roles.includes("Admin")) {
+                // Rollenprüfung für Menü & Karten
+                if(roles.includes("Admin")) {
                     document.getElementById('nav-admin').style.display = 'block';
+                    document.getElementById('card-admin').style.display = 'flex';
                 }
-                if (roles.includes("Admin") || roles.includes("Alarm Display Admin")) {
-                    document.getElementById('nav-alarm').style.display = 'block';
+                if(roles.includes("AD") || roles.includes("Admin")) {
+                    document.getElementById('card-ad').style.display = 'flex';
                 }
             }
         });
 
-        // Tab-Wechsel Logik
-        window.showTab = (id) => {
+        window.showTab = (name) => {
             document.querySelectorAll('.tab').forEach(t => t.style.display = 'none');
-            document.getElementById('tab-' + id).style.display = 'block';
-            if (id === 'admin') loadUsers();
+            document.getElementById('tab-' + name).style.display = 'block';
+            if(name === 'admin') loadUserList();
         };
 
-        // User-Liste mit Leucht-Buttons laden
-        async function loadUsers() {
+        async function loadUserList() {
             const list = document.getElementById('user-list');
             const snap = await getDocs(collection(db, "users"));
             list.innerHTML = "";
-            
             snap.forEach(d => {
                 const u = d.data();
                 const r = u.role || [];
                 list.innerHTML += `
-                    <div class="user-row">
+                    <div class="user-item">
                         <span>${u.username}</span>
-                        <div class="role-btns">
-                            <button onclick="toggleRole('${d.id}', ${JSON.stringify(r)}, 'Admin')" class="glow-btn ${r.includes('Admin') ? 'gold' : ''}">Admin</button>
-                            <button onclick="toggleRole('${d.id}', ${JSON.stringify(r)}, 'Alarm Display Admin')" class="glow-btn ${r.includes('Alarm Display Admin') ? 'blue' : ''}">Alarm Admin</button>
-                            <button onclick="toggleRole('${d.id}', ${JSON.stringify(r)}, 'AD')" class="glow-btn ${r.includes('AD') ? 'green' : ''}">AD</button>
-                            <button onclick="toggleRole('${d.id}', ${JSON.stringify(r)}, 'Gesperrt')" class="glow-btn ${r.includes('Gesperrt') ? 'red' : ''}">Sperren</button>
+                        <div class="role-group">
+                            <button onclick="toggleRole('${d.id}', '${JSON.stringify(r)}', 'Admin')" class="glow-btn ${r.includes('Admin')?'gold':''}">Admin</button>
+                            <button onclick="toggleRole('${d.id}', '${JSON.stringify(r)}', 'AD')" class="glow-btn ${r.includes('AD')?'green':''}">AD</button>
+                            <button onclick="toggleRole('${d.id}', '${JSON.stringify(r)}', 'Gesperrt')" class="glow-btn ${r.includes('Gesperrt')?'red':''}">Sperren</button>
                         </div>
                     </div>`;
             });
         }
 
-        // Rolle umschalten
-        window.toggleRole = async (uid, currentRoles, roleName) => {
-            let newRoles = currentRoles.includes(roleName) 
-                ? currentRoles.filter(r => r !== roleName) 
-                : [...currentRoles, roleName];
-            
-            try {
-                await updateDoc(doc(db, "users", uid), { role: newRoles });
-                loadUsers();
-            } catch (e) { alert("Fehler beim Speichern!"); }
+        window.toggleRole = async (uid, currentJSON, roleName) => {
+            const current = JSON.parse(currentJSON.replace(/'/g, '"'));
+            const userRef = doc(db, "users", uid);
+            if(current.includes(roleName)) {
+                await updateDoc(userRef, { role: arrayRemove(roleName) });
+            } else {
+                await updateDoc(userRef, { role: arrayUnion(roleName) });
+            }
+            loadUserList();
         };
 
         window.logout = () => signOut(auth);
