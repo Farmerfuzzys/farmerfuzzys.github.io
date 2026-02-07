@@ -10,21 +10,30 @@
         <img src="Farmerfuzzys_logo.jpg" class="nav-logo">
         <button class="nav-btn" onclick="showTab('home')">Startseite</button>
         <button class="nav-btn" onclick="showTab('admin')" id="nav-admin" style="display:none;">Mitglieder</button>
-        <button class="nav-btn" onclick="showTab('alarm')" id="nav-alarm" style="display:none; color:red;">Alarm-Zentrale</button>
+        <button class="nav-btn" onclick="showTab('alarm')" id="nav-alarm" style="display:none; color:#ff4b4b;">Alarm Senden</button>
         <button class="nav-btn" onclick="logout()" style="margin-top:auto;">Abmelden</button>
     </nav>
 
     <main class="main-content">
         <div id="tab-home" class="tab">
             <h1>Willkommen zurück</h1>
-            <p id="status-text" style="color:#00f2ff; margin-top:10px;"></p>
+            <p id="user-welcome" style="color:var(--accent); margin-top:10px;"></p>
         </div>
 
         <div id="tab-admin" class="tab" style="display:none;">
             <h1>Mitgliederverwaltung</h1>
             <div class="card">
                 <h3>Mitglieder & Rollen</h3>
-                <div id="user-list">Lade...</div>
+                <div id="user-list">Lade Liste...</div>
+            </div>
+        </div>
+        
+        <div id="tab-alarm" class="tab" style="display:none;">
+            <h1>Alarm auslösen</h1>
+            <div class="card">
+                <input id="a-ort" placeholder="Einsatzort">
+                <input id="a-grund" placeholder="Einsatzgrund">
+                <button onclick="sendAlarm()" class="btn-primary" style="background:#ff4b4b;">ALARM ABSCHICKEN</button>
             </div>
         </div>
     </main>
@@ -46,51 +55,66 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        onAuthStateChanged(auth, async user => {
-            if(!user) { window.location.href = "index.html"; return; }
+        // Prüfen wer eingeloggt ist und Menü zeigen
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = "index.html"; return; }
+            
             const snap = await getDoc(doc(db, "users", user.uid));
-            if(snap.exists()) {
+            if (snap.exists()) {
                 const data = snap.data();
                 const roles = data.role || [];
-                document.getElementById('status-text').innerText = "Angemeldet als: " + data.username;
                 
-                if(roles.includes("Admin")) document.getElementById('nav-admin').style.display = 'block';
-                if(roles.includes("Admin") || roles.includes("Alarm Display Admin")) {
+                document.getElementById('user-welcome').innerText = "Angemeldet als: " + data.username;
+
+                // Knöpfe einblenden je nach Rolle
+                if (roles.includes("Admin")) {
+                    document.getElementById('nav-admin').style.display = 'block';
+                }
+                if (roles.includes("Admin") || roles.includes("Alarm Display Admin")) {
                     document.getElementById('nav-alarm').style.display = 'block';
                 }
             }
         });
 
+        // Tab-Wechsel Logik
         window.showTab = (id) => {
             document.querySelectorAll('.tab').forEach(t => t.style.display = 'none');
             document.getElementById('tab-' + id).style.display = 'block';
-            if(id === 'admin') renderUsers();
+            if (id === 'admin') loadUsers();
         };
 
-        async function renderUsers() {
+        // User-Liste mit Leucht-Buttons laden
+        async function loadUsers() {
             const list = document.getElementById('user-list');
             const snap = await getDocs(collection(db, "users"));
             list.innerHTML = "";
+            
             snap.forEach(d => {
                 const u = d.data();
                 const r = u.role || [];
                 list.innerHTML += `
                     <div class="user-row">
                         <span>${u.username}</span>
-                        <div class="btn-group">
-                            <button onclick="updateRole('${d.id}', ${JSON.stringify(r)}, 'Admin')" class="glow-btn ${r.includes('Admin')?'gold':''}">Admin</button>
-                            <button onclick="updateRole('${d.id}', ${JSON.stringify(r)}, 'Alarm Display Admin')" class="glow-btn ${r.includes('Alarm Display Admin')?'blue':''}">Alarm Admin</button>
-                            <button onclick="updateRole('${d.id}', ${JSON.stringify(r)}, 'AD')" class="glow-btn ${r.includes('AD')?'green':''}">AD</button>
-                            <button onclick="updateRole('${d.id}', ${JSON.stringify(r)}, 'Gesperrt')" class="glow-btn ${r.includes('Gesperrt')?'red':''}">Sperren</button>
+                        <div class="role-btns">
+                            <button onclick="toggleRole('${d.id}', ${JSON.stringify(r)}, 'Admin')" class="glow-btn ${r.includes('Admin') ? 'gold' : ''}">Admin</button>
+                            <button onclick="toggleRole('${d.id}', ${JSON.stringify(r)}, 'Alarm Display Admin')" class="glow-btn ${r.includes('Alarm Display Admin') ? 'blue' : ''}">Alarm Admin</button>
+                            <button onclick="toggleRole('${d.id}', ${JSON.stringify(r)}, 'AD')" class="glow-btn ${r.includes('AD') ? 'green' : ''}">AD</button>
+                            <button onclick="toggleRole('${d.id}', ${JSON.stringify(r)}, 'Gesperrt')" class="glow-btn ${r.includes('Gesperrt') ? 'red' : ''}">Sperren</button>
                         </div>
                     </div>`;
             });
         }
 
-        window.updateRole = async (uid, current, role) => {
-            let next = current.includes(role) ? current.filter(x => x !== role) : [...current, role];
-            await updateDoc(doc(db, "users", uid), { role: next });
-            renderUsers();
+        // Rolle umschalten
+        window.toggleRole = async (uid, currentRoles, roleName) => {
+            let newRoles = currentRoles.includes(roleName) 
+                ? currentRoles.filter(r => r !== roleName) 
+                : [...currentRoles, roleName];
+            
+            try {
+                await updateDoc(doc(db, "users", uid), { role: newRoles });
+                loadUsers();
+            } catch (e) { alert("Fehler beim Speichern!"); }
         };
 
         window.logout = () => signOut(auth);
