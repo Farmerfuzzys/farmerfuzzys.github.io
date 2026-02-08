@@ -2,17 +2,166 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Login | FarmerFuzzys</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | FarmerFuzzys Leitstelle</title>
+    <style>
+        :root {
+            --bg-color: #05070a;
+            --card-bg: #0d1117;
+            --accent-color: #00f2ff;
+            --text-color: #ffffff;
+            --border-color: #30363d;
+            --error-color: #ff4444;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .login-container {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-container img {
+            width: 100px;
+            height: 100px;
+            border-radius: 20%;
+            margin-bottom: 20px;
+            border: 2px solid var(--border-color);
+        }
+
+        .login-container h2 {
+            margin-bottom: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .login-container p {
+            color: #8b949e;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: #8b949e;
+            margin-bottom: 5px;
+            margin-left: 5px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: #010409;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 8px rgba(0, 242, 255, 0.2);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--accent-color);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-login:hover {
+            background-color: #00d8e4;
+            transform: scale(1.02);
+        }
+
+        .btn-login:active {
+            transform: scale(0.98);
+        }
+
+        .discord-link {
+            display: inline-block;
+            margin-top: 25px;
+            color: #5865f2;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.3s;
+        }
+
+        .discord-link:hover {
+            color: #7289da;
+            text-decoration: underline;
+        }
+
+        #error-msg {
+            color: var(--error-color);
+            font-size: 0.85rem;
+            margin-top: 15px;
+            display: none;
+        }
+    </style>
 </head>
-<body class="login-body">
-    <div class="login-card">
-        <img src="Farmerfuzzys_logo.jpg" alt="Logo" class="logo">
-        <h2>Anmelden</h2>
-        <input type="text" id="email" placeholder="Benutzername">
-        <input type="password" id="pass" placeholder="Passwort">
-        <button onclick="doLogin()" class="btn-primary">Anmelden</button>
-        <a href="https://discord.gg/hPTcV6NaVw" target="_blank" class="discord-btn">Unser Discord</a>
+<body>
+
+    <div class="login-container">
+        <img src="Farmerfuzzys_logo.jpg" alt="Logo">
+        <h2>Einsatz-Portal</h2>
+        <p>Bitte melden Sie sich an</p>
+
+        <div class="input-group">
+            <label>Benutzername / Kennung</label>
+            <input type="text" id="email" placeholder="z.B. Erfurt 01/83/02" required>
+        </div>
+
+        <div class="input-group">
+            <label>Passwort</label>
+            <input type="password" id="password" placeholder="••••••••" required>
+        </div>
+
+        <button class="btn-login" onclick="login()">Anmelden</button>
+        
+        <div id="error-msg">Ungültige Anmeldedaten!</div>
+
+        <a href="https://discord.gg/hPTcV6NaVw" target="_blank" class="discord-link">Support via Discord</a>
     </div>
 
     <script type="module">
@@ -27,17 +176,33 @@
             messagingSenderId: "842395157432",
             appId: "1:842395157432:web:fd031d7cc0c2a6e69ec54d"
         };
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        window.doLogin = async () => {
-            const user = document.getElementById('email').value.trim().toLowerCase();
-            const pass = document.getElementById('pass').value;
+        window.login = async () => {
+            const userBox = document.getElementById('email');
+            const passBox = document.getElementById('password');
+            const errorMsg = document.getElementById('error-msg');
+            
+            // Wir hängen die Domain automatisch an, damit die User nur ihren Namen tippen müssen
+            const email = userBox.value.trim().replace(/\s+/g, '_').toLowerCase() + "@farmerfuzzys.local";
+            const password = passBox.value;
+
             try {
-                await signInWithEmailAndPassword(auth, user + "@farmerfuzzys.local", pass);
+                await signInWithEmailAndPassword(auth, email, password);
                 window.location.href = "dashboard.html";
-            } catch (e) { alert("Login fehlgeschlagen!"); }
+            } catch (error) {
+                console.error("Login Error:", error.code);
+                errorMsg.style.display = 'block';
+                passBox.value = "";
+            }
         };
+
+        // Login mit Enter-Taste
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') login();
+        });
     </script>
 </body>
 </html>
