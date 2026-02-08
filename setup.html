@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head><title>Setup FarmerFuzzy</title></head>
+<body>
+    <h1>Datenbank wird eingerichtet...</h1>
+    <div id="log"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDiYOJWP4XMQRJ6b-RfJp6Aqxis7E-uA30",
+            authDomain: "farmerfuzzys-c32eb.firebaseapp.com",
+            projectId: "farmerfuzzys-c32eb",
+            storageBucket: "farmerfuzzys-c32eb.firebasestorage.app",
+            messagingSenderId: "842395157432",
+            appId: "1:842395157432:web:fd031d7cc0c2a6e69ec54d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function setup() {
+            const log = document.getElementById('log');
+            
+            // 1. Admin Account (Beispiel für Scheemie)
+            // Ersetze 'DEINE_UID' mit der UID aus der Firebase Console -> Authentication
+            await setDoc(doc(db, "users", "HIER_DEINE_UID_EINTRAGEN"), {
+                username: "Scheemie",
+                role: ["Admin", "Disponent"]
+            });
+
+            // 2. Fahrzeug Account (Erfurt 01/11/01)
+            // Erstelle diesen User erst in der Firebase Console (Auth) und trage die UID hier ein
+            await setDoc(doc(db, "users", "FAHRZEUG_UID_AUS_AUTH"), {
+                username: "Erfurt 01/11/01",
+                role: ["Einsatzfahrzeug"],
+                status: 2,
+                currentAlarm: null
+            });
+
+            log.innerHTML += "<p style='color:green;'>Erfolgreich! Die Rollen wurden zugewiesen.</p>";
+        }
+        setup();
+    </script>
+</body>
+</html>
