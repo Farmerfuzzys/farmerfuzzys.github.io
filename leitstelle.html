@@ -1,34 +1,150 @@
-<div class="leitstelle-container">
-    <h2>Neuen Einsatz erstellen</h2>
-    <div class="input-group">
-        <label>Einsatzort:</label>
-        <input type="text" id="einsatzort" placeholder="Baumerstraße, Erfurt...">
-    </div>
-    
-    <div class="input-group">
-        <label>Stichwort:</label>
-        <select id="stichwort">
-            <optgroup label="R1 (RTW)">
-                <option>R1 - Apoplex</option>
-                <option>R1 - hilflose Person</option>
-                <option>R1 - Fraktur / Sturz</option>
-            </optgroup>
-            <optgroup label="R2 (NEF)">
-                <option>R2 - Akute Schmerzen</option>
-                <option>R2 - Störung Bewusstsein</option>
-            </optgroup>
-            <optgroup label="R3 (NEF+RTW)">
-                <option>R3 - Reanimation</option>
-                <option>R3 - Bewusstlosigkeit</option>
-            </optgroup>
-        </select>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Leitstelle Erfurt - Einsatzleitsystem</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=DEIN_API_KEY&libraries=places"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #0a0c10; height: 100vh; display: flex; flex-direction: column; }
+        .ls-header { background: #161b22; padding: 10px 20px; border-bottom: 2px solid #e60000; display: flex; justify-content: space-between; }
+        
+        .main-layout { display: grid; grid-template-columns: 400px 1fr 400px; gap: 10px; padding: 10px; flex: 1; overflow: hidden; }
+        .panel { background: #0d1117; border: 1px solid #30363d; display: flex; flex-direction: column; border-radius: 5px; }
+        .panel-header { background: #1f242c; padding: 8px; font-weight: bold; font-size: 0.9rem; border-bottom: 1px solid #30363d; }
+        
+        /* Einsatzaufnahme */
+        .form-section { padding: 15px; overflow-y: auto; }
+        label { color: #8b949e; font-size: 0.75rem; text-transform: uppercase; }
+        select, input, textarea { width: 100%; background: #010409; border: 1px solid #30363d; color: white; padding: 8px; margin-bottom: 12px; border-radius: 4px; box-sizing: border-box; }
+        
+        /* Fahrzeug-Tableau */
+        .vehicle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; padding: 10px; }
+        .fz-box { background: #161b22; border: 1px solid #30363d; padding: 8px; text-align: center; cursor: pointer; border-radius: 4px; transition: 0.2s; }
+        .fz-box span { display: block; font-size: 0.7rem; color: #8b949e; }
+        .fz-box strong { font-size: 0.9rem; }
+        
+        /* Status Farben */
+        .stat-1 { color: #fff; } .stat-2 { border-left: 5px solid #10b981; } 
+        .stat-3 { border-left: 5px solid #f59e0b; background: #2d1d00; } .stat-4 { border-left: 5px solid #ef4444; background: #2d0000; }
+        .selected { border: 2px solid #00f2ff !important; box-shadow: 0 0 10px rgba(0, 242, 255, 0.3); }
+
+        #map-ls { flex: 1; background: #222; }
+        .alarm-btn-ls { background: #e60000; color: white; border: none; padding: 15px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; }
+        .alarm-btn-ls:hover { background: #ff0000; }
+    </style>
+</head>
+<body>
+
+<div class="ls-header">
+    <div>ELP - Einsatzleitplatz Erfurt | Disponent: <span id="dispo-name">Lädt...</span></div>
+    <div id="uhrzeit-ls">00:00:00</div>
+</div>
+
+<div class="main-layout">
+    <div class="panel">
+        <div class="panel-header">EINSATZDATEN</div>
+        <div class="form-section">
+            <label>Einsatzort / Objekt</label>
+            <input type="text" id="ls-ort" placeholder="Straße, Hausnummer, Ort">
+            
+            <label>Meldebild / Stichwort</label>
+            <input type="text" id="ls-stichwort-suche" list="stichwoerter" placeholder="Tippen zum Suchen...">
+            <datalist id="stichwoerter">
+                </datalist>
+
+            <label>Bemerkung / Sachverhalt</label>
+            <textarea id="ls-info" rows="4" placeholder="Zusatzinfos..."></textarea>
+            
+            <label>Meldender</label>
+            <input type="text" id="ls-melder" placeholder="Name, Telefon">
+        </div>
+        <button class="alarm-btn-ls" onclick="ausloesen()">ALARM AUSLÖSEN</button>
     </div>
 
-    <div class="vehicle-selection">
-        <h3>Verfügbare Fahrzeuge:</h3>
-        <div id="dispo-vehicle-list">
+    <div class="panel">
+        <div class="panel-header">KRÄFTEDISPOSITION (VERFÜGBARKEIT)</div>
+        <div class="vehicle-grid" id="fz-tableau">
             </div>
     </div>
-    
-    <button class="alarm-btn" onclick="sendAlarm()">Einsatz erstellen & alarmieren</button>
+
+    <div class="panel">
+        <div class="panel-header">LAGEKARTE</div>
+        <div id="map-ls"></div>
+        <div class="panel-header">PROTOKOLL</div>
+        <div id="protokoll" style="padding: 10px; font-size: 0.8rem; overflow-y: auto; flex: 1;">
+            <div>[System] Leitstelle bereit.</div>
+        </div>
+    </div>
 </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = { /* DEINE CONFIG */ };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ERFURT STICHWÖRTER LISTE
+    const stichworte = [
+        "B1 - Kleinbrand", "B2 - Mittelbrand", "B3 - Großbrand", "B3-Person - Brand Menschenleben in Gefahr",
+        "B4 - Brand Sonderobjekt", "TH1 - Hilfeleistung klein", "TH2 - Hilfeleistung mittel", "TH3 - VU eingeklemmte Person",
+        "TH4 - Großschadenslage", "R1 - Notfallrettung", "R2 - Notarzt-Einsatz", "R3 - Reanimation",
+        "KTP - Krankentransport", "MANV10 - Massenanfall Verletzte", "W - Wasserrettung"
+    ];
+
+    const list = document.getElementById('stichwoerter');
+    stichworte.forEach(s => list.innerHTML += `<option value="${s}">`);
+
+    // FAHRZEUGE LADEN & SELEKTIEREN
+    let selectedVehicles = [];
+    onSnapshot(collection(db, "users"), (snap) => {
+        const grid = document.getElementById('fz-tableau');
+        grid.innerHTML = "";
+        snap.forEach(d => {
+            const data = d.data();
+            if(data.role.includes("Einsatzfahrzeug")) {
+                const box = document.createElement('div');
+                box.className = `fz-box stat-${data.status} ${selectedVehicles.includes(data.username) ? 'selected' : ''}`;
+                box.innerHTML = `<strong>${data.username}</strong><span>Status: ${data.status}</span>`;
+                box.onclick = () => {
+                    if(selectedVehicles.includes(data.username)) {
+                        selectedVehicles = selectedVehicles.filter(v => v !== data.username);
+                    } else {
+                        selectedVehicles.push(data.username);
+                    }
+                    box.classList.toggle('selected');
+                };
+                grid.appendChild(box);
+            }
+        });
+    });
+
+    // ALARM AUSLÖSEN
+    window.ausloesen = async () => {
+        const ort = document.getElementById('ls-ort').value;
+        const sw = document.getElementById('ls-stichwort-suche').value;
+        
+        if(!ort || !sw || selectedVehicles.length === 0) {
+            alert("Fehlende Daten: Ort, Stichwort oder Fahrzeuge!");
+            return;
+        }
+
+        const alarmData = {
+            active: true,
+            stichwort: sw,
+            adresse: ort,
+            fahrzeuge: selectedVehicles,
+            timestamp: Date.now()
+        };
+
+        await setDoc(doc(db, "system", "current_alarm"), alarmData);
+        alert("Einsatz erfolgreich eröffnet!");
+        selectedVehicles = []; // Reset
+    };
+
+    // Google Autocomplete & Karte Initialisierung...
+</script>
+</body>
+</html>
