@@ -1,13 +1,56 @@
 <!DOCTYPE html>
-<html>
-<body style="background:black;color:white">
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Fahrzeug</title>
 
-<h1>🚒 Fahrzeug</h1>
-<div id="alarm">Warte...</div>
+<style>
+body {
+  background:#0b0f14;
+  color:white;
+  font-family:Arial;
+  padding:20px;
+}
+
+.box {
+  border:1px solid #30363d;
+  padding:15px;
+  margin-bottom:20px;
+}
+
+select {
+  width:100%;
+  padding:10px;
+  background:#161b22;
+  color:white;
+  border:1px solid #30363d;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Fahrzeugstatus</h1>
+
+<div class="box" id="alarmBox">Kein Einsatz</div>
+
+<select onchange="setStatus(this.value)">
+  <option value="1">1 Einsatzbereit über Funk</option>
+  <option value="2">2 Einsatzbereit Wache</option>
+  <option value="3">3 Anfahrt</option>
+  <option value="4">4 Einsatzort</option>
+  <option value="5">5 Sprechwunsch</option>
+  <option value="6">6 Nicht bereit</option>
+  <option value="7">7 Transport</option>
+  <option value="8">8 Zielort</option>
+  <option value="9">9 Sonderstatus</option>
+  <option value="0">0 Dringend</option>
+</select>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "HIER_DEIN_KEY",
@@ -16,18 +59,25 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
+// Einsatz anzeigen (nur Stichwort!)
 onSnapshot(doc(db,"system","alarm"), (snap) => {
   if (!snap.exists()) return;
 
   const a = snap.data();
-
-  alarm.innerHTML = `
-    <h2>🚨 ALARM</h2>
-    <p>${a.stichwort}</p>
-    <p>${a.ort}</p>
-  `;
+  alarmBox.innerHTML = a.stichwort;
 });
+
+// Status setzen
+window.setStatus = async (status) => {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  await updateDoc(doc(db,"vehicles", user.uid), {
+    status: Number(status)
+  });
+};
 </script>
 
 </body>
