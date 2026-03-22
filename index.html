@@ -1,208 +1,41 @@
 <!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | FarmerFuzzys Leitstelle</title>
-    <style>
-        :root {
-            --bg-color: #05070a;
-            --card-bg: #0d1117;
-            --accent-color: #00f2ff;
-            --text-color: #ffffff;
-            --border-color: #30363d;
-            --error-color: #ff4444;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .login-container {
-            background-color: var(--card-bg);
-            padding: 40px;
-            border-radius: 15px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-            animation: fadeIn 0.5s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .login-container img {
-            width: 100px;
-            height: 100px;
-            border-radius: 20%;
-            margin-bottom: 20px;
-            border: 2px solid var(--border-color);
-        }
-
-        .login-container h2 {
-            margin-bottom: 10px;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-
-        .login-container p {
-            color: #8b949e;
-            font-size: 0.9rem;
-            margin-bottom: 30px;
-        }
-
-        .input-group {
-            text-align: left;
-            margin-bottom: 20px;
-        }
-
-        .input-group label {
-            display: block;
-            font-size: 0.8rem;
-            color: #8b949e;
-            margin-bottom: 5px;
-            margin-left: 5px;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px 15px;
-            background-color: #010409;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: white;
-            font-size: 1rem;
-            box-sizing: border-box;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 8px rgba(0, 242, 255, 0.2);
-        }
-
-        .btn-login {
-            width: 100%;
-            padding: 12px;
-            background-color: var(--accent-color);
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s, background-color 0.3s;
-            margin-top: 10px;
-        }
-
-        .btn-login:hover {
-            background-color: #00d8e4;
-            transform: scale(1.02);
-        }
-
-        .btn-login:active {
-            transform: scale(0.98);
-        }
-
-        .discord-link {
-            display: inline-block;
-            margin-top: 25px;
-            color: #5865f2;
-            text-decoration: none;
-            font-size: 0.85rem;
-            transition: color 0.3s;
-        }
-
-        .discord-link:hover {
-            color: #7289da;
-            text-decoration: underline;
-        }
-
-        #error-msg {
-            color: var(--error-color);
-            font-size: 0.85rem;
-            margin-top: 15px;
-            display: none;
-        }
-    </style>
-</head>
+<html>
 <body>
 
-    <div class="login-container">
-        <img src="Farmerfuzzys_logo.jpg" alt="Logo">
-        <h2>Einsatz-Portal</h2>
-        <p>Bitte melden Sie sich an</p>
+<h2>Login</h2>
+<input id="email" placeholder="Email"><br><br>
+<input id="password" type="password" placeholder="Passwort"><br><br>
+<button onclick="login()">Login</button>
 
-        <div class="input-group">
-            <label>Benutzername / Kennung</label>
-            <input type="text" id="email" placeholder="Benutzer- oder Fahrzeugname" required>
-        </div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        <div class="input-group">
-            <label>Passwort</label>
-            <input type="password" id="password" placeholder="••••••••" required>
-        </div>
+const firebaseConfig = {
+  apiKey: "AIzaSyDiYOJWP4XMQRJ6b-RfJp6Aqxis7E-uA30",
+  authDomain: "farmerfuzzys-c32eb.firebaseapp.com",
+  projectId: "farmerfuzzys-c32eb",
+  storageBucket: "farmerfuzzys-c32eb.firebasestorage.app",
+  messagingSenderId: "842395157432",
+  appId: "1:842395157432:web:fd031d7cc0c2a6e69ec54d"
+};
 
-        <button class="btn-login" onclick="login()">Anmelden</button>
-        
-        <div id="error-msg">Ungültige Anmeldedaten!</div>
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-        <a href="https://discord.gg/hPTcV6NaVw" target="_blank" class="discord-link">Support via Discord</a>
-    </div>
+window.login = async () => {
+  const user = await signInWithEmailAndPassword(auth, email.value, password.value);
+  const snap = await getDoc(doc(db, "users", user.user.uid));
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  const role = snap.data().role;
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDiYOJWP4XMQRJ6b-RfJp6Aqxis7E-uA30",
-            authDomain: "farmerfuzzys-c32eb.firebaseapp.com",
-            projectId: "farmerfuzzys-c32eb",
-            storageBucket: "farmerfuzzys-c32eb.firebasestorage.app",
-            messagingSenderId: "842395157432",
-            appId: "1:842395157432:web:fd031d7cc0c2a6e69ec54d"
-        };
+  if (role === "dispatcher") window.location = "leitstelle.html";
+  if (role === "vehicle") window.location = "fahrzeug.html";
+  if (role === "admin") window.location = "admin.html";
+};
+</script>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-
-        window.login = async () => {
-            const userBox = document.getElementById('email');
-            const passBox = document.getElementById('password');
-            const errorMsg = document.getElementById('error-msg');
-            
-            // Wir hängen die Domain automatisch an, damit die User nur ihren Namen tippen müssen
-            const email = userBox.value.trim().replace(/\s+/g, '_').toLowerCase() + "@farmerfuzzys.local";
-            const password = passBox.value;
-
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                window.location.href = "dashboard.html";
-            } catch (error) {
-                console.error("Login Error:", error.code);
-                errorMsg.style.display = 'block';
-                passBox.value = "";
-            }
-        };
-
-        // Login mit Enter-Taste
-        document.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') login();
-        });
-    </script>
 </body>
 </html>
