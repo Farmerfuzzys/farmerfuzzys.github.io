@@ -7,15 +7,22 @@
 <style>
 body {
   margin:0;
+  font-family:Arial;
   background:#0b0f14;
   color:#e6edf3;
-  font-family:Arial;
+}
+
+.header {
+  background:#161b22;
+  padding:15px;
+  border-bottom:1px solid #30363d;
+  font-size:18px;
 }
 
 .container {
   display:grid;
   grid-template-columns: 2fr 1fr;
-  height:100vh;
+  height:calc(100vh - 50px);
 }
 
 .panel {
@@ -23,9 +30,10 @@ body {
   border-right:1px solid #30363d;
 }
 
-h1 {
-  font-size:18px;
-  margin-bottom:20px;
+h2 {
+  font-size:14px;
+  margin-bottom:10px;
+  color:#8b949e;
 }
 
 input {
@@ -40,24 +48,24 @@ input {
 button {
   width:100%;
   padding:10px;
-  background:#1f6feb;
+  background:#238636;
   border:none;
   color:white;
   cursor:pointer;
 }
 
-.alarm-box {
+.alarm {
   margin-top:20px;
   padding:15px;
-  border:1px solid #30363d;
   background:#161b22;
+  border:1px solid #30363d;
 }
 
 .vehicle {
-  padding:10px;
-  border-bottom:1px solid #30363d;
   display:flex;
   justify-content:space-between;
+  padding:10px;
+  border-bottom:1px solid #30363d;
 }
 
 .status {
@@ -69,25 +77,28 @@ button {
 
 <body>
 
+<div class="header">Leitstelle – Einsatzsystem</div>
+
 <div class="container">
 
-<!-- LINK: EINSATZ -->
+<!-- LINKS -->
 <div class="panel">
-<h1>Einsatzaufnahme</h1>
+<h2>Einsatz erstellen</h2>
 
 <input id="ort" placeholder="Einsatzort">
 <input id="stichwort" placeholder="Stichwort">
-<input id="info" placeholder="Zusatzinformationen">
+<input id="info" placeholder="Zusatzinfo">
 
-<button onclick="alarm()">Einsatz anlegen</button>
+<button onclick="createAlarm()">Einsatz anlegen</button>
 
-<div class="alarm-box" id="alarmBox"></div>
+<h2>Aktueller Einsatz</h2>
+<div id="alarmBox" class="alarm">Kein Einsatz aktiv</div>
 </div>
 
-<!-- RECHTS: FAHRZEUGE -->
+<!-- RECHTS -->
 <div class="panel">
-<h1>Fahrzeuge</h1>
-<div id="vehicles"></div>
+<h2>Fahrzeuge</h2>
+<div id="vehicleList"></div>
 </div>
 
 </div>
@@ -97,43 +108,47 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "HIER_DEIN_KEY",
-  projectId: "farmerfuzzys-c32eb"
+  apiKey: "AIzaSyDiYOJWP4XMQRJ6b-RfJp6Aqxis7E-uA30",
+  authDomain: "farmerfuzzys-c32eb.firebaseapp.com",
+  projectId: "farmerfuzzys-c32eb",
+  storageBucket: "farmerfuzzys-c32eb.firebasestorage.app",
+  messagingSenderId: "842395157432",
+  appId: "1:842395157432:web:fd031d7cc0c2a6e69ec54d"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const statusText = {
-  0:"Dringender Sprechwunsch",
-  1:"Einsatzbereit über Funk",
-  2:"Einsatzbereit auf Wache",
-  3:"Auf Anfahrt",
-  4:"Am Einsatzort",
-  5:"Sprechwunsch",
-  6:"Nicht einsatzbereit",
-  7:"Transportfahrt",
-  8:"Am Zielort",
-  9:"Sonderstatus"
+  0:"0 Dringend",
+  1:"1 Funk",
+  2:"2 Wache",
+  3:"3 Anfahrt",
+  4:"4 Einsatzort",
+  5:"5 Sprechwunsch",
+  6:"6 Nicht bereit",
+  7:"7 Transport",
+  8:"8 Zielort",
+  9:"9 Sonderstatus"
 };
 
 // Einsatz erstellen
-window.alarm = async () => {
+window.createAlarm = async () => {
   await setDoc(doc(db,"system","alarm"), {
     ort: ort.value,
     stichwort: stichwort.value,
-    info: info.value,
-    time: new Date().toISOString()
+    info: info.value
   });
 };
 
-// Aktuellen Einsatz anzeigen
+// Einsatz anzeigen
 onSnapshot(doc(db,"system","alarm"), (snap) => {
   if (!snap.exists()) return;
+
   const a = snap.data();
 
   alarmBox.innerHTML = `
-    <strong>${a.stichwort}</strong><br>
+    <b>${a.stichwort}</b><br>
     ${a.ort}<br>
     ${a.info || ""}
   `;
@@ -141,12 +156,12 @@ onSnapshot(doc(db,"system","alarm"), (snap) => {
 
 // Fahrzeuge anzeigen
 onSnapshot(collection(db,"vehicles"), (snap) => {
-  vehicles.innerHTML = "";
+  vehicleList.innerHTML = "";
 
-  snap.forEach(doc => {
-    const v = doc.data();
+  snap.forEach(d => {
+    const v = d.data();
 
-    vehicles.innerHTML += `
+    vehicleList.innerHTML += `
       <div class="vehicle">
         <div>${v.name}</div>
         <div class="status">${statusText[v.status]}</div>
