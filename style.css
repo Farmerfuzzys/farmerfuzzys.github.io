@@ -1,11 +1,12 @@
 body {
+  font-family: Arial;
   margin:0;
-  font-family:Arial;
+  background:#000;
+  color:white;
 }
 
 /* LOGIN */
-.login-body {
-  background:#0b0f14;
+.login {
   display:flex;
   justify-content:center;
   align-items:center;
@@ -13,46 +14,43 @@ body {
 }
 
 .login-box {
-  background:#161b22;
+  background:#111;
   padding:30px;
-  border-radius:10px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
   width:300px;
-  text-align:center;
 }
 
-.logo {
-  width:80px;
-  margin-bottom:15px;
-}
-
-/* DISPLAY */
-.display {
-  background:#0b0f14;
+input {
+  padding:10px;
+  background:#000;
+  border:1px solid #333;
   color:white;
 }
 
-.topbar {
-  display:flex;
-  justify-content:space-between;
+button {
   padding:10px;
-  font-size:20px;
+  background:red;
+  border:none;
+  color:white;
+  cursor:pointer;
 }
 
-.layout {
-  display:grid;
-  grid-template-columns: 300px 1fr;
+/* DASHBOARD */
+.dashboard {
+  padding:40px;
 }
 
-.vehicles {
+.menu button {
+  display:block;
+  margin:10px 0;
+  width:200px;
+}
+
+/* ADMIN */
+.user {
   background:#111;
-}
-
-.vehicle {
+  margin:10px;
   padding:10px;
-  border-bottom:1px solid #333;
 }
-
-.green { background:#1f6f3d; }
-.orange { background:#b45309; }
-.red { background:#991b1b; }
-.gray { background:#374151; }
