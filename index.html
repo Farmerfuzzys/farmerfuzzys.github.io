@@ -1,47 +1,117 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<title>Login</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fire Dispatcher Portal</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+<body class="portal-login-body">
+  <main class="portal-login-shell">
+    <section class="portal-login-hero">
+      <div class="portal-hero-overlay">
+        <img src="Fire Dispatcher.png" alt="Fire Dispatcher Logo" class="portal-login-logo">
+        <p>Fire Dispatcher Portal</p>
+      </div>
+    </section>
 
-<body class="login">
+    <section class="portal-login-form">
+      <div class="portal-login-title">Anmeldung</div>
+      <div class="portal-login-card">
+        <p>Bitte gib deinen Benutzernamen und dein Kennwort ein.</p>
 
-<div class="login-box">
-<h1>FIRE DISPATCHER</h1>
+        <div class="field">
+          <label for="username">Benutzername</label>
+          <input id="username" placeholder="Benutzername">
+        </div>
 
-<input id="username" placeholder="Benutzername">
-<input id="password" type="password" placeholder="Passwort">
+        <div class="field">
+          <label for="password">Kennwort</label>
+          <input id="password" type="password" placeholder="Kennwort">
+        </div>
 
-<button onclick="login()">ANMELDEN</button>
+        <div class="inline-actions">
+          <button id="loginButton" type="button">Anmelden</button>
+        </div>
 
-<p id="error"></p>
-</div>
+        <p id="error" class="feedback"></p>
 
-<script type="module">
-import { auth, db } from "./firebase.js";
-import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        <div class="portal-demo-grid three-demo-columns">
+          <button id="demoHost" class="secondary" type="button">Demo HOST</button>
+          <button id="demoAdmin" class="secondary" type="button">Demo ADMIN</button>
+          <button id="demoWehrleiter" class="secondary" type="button">Demo WEHRLEITER</button>
+          <button id="demoDisponent" class="secondary" type="button">Demo DISPONENT</button>
+          <button id="demoEinsatzkraft" class="secondary" type="button">Demo EINSATZKRAFT</button>
+          <button id="demoDisplay" class="secondary" type="button">Demo ALARM DISPLAY</button>
+        </div>
+      </div>
+    </section>
+  </main>
 
-window.login = async () => {
-  try {
-    const email = username.value + "@farmerfuzzys.local";
+  <script type="module">
+    import { auth, db } from "./firebase.js";
+    import {
+      ROLE_ADMIN,
+      ROLE_ALARM_DISPLAY,
+      ROLE_DISPONENT,
+      ROLE_EINSATZKRAFT,
+      ROLE_HOST,
+      ROLE_WEHRLEITER,
+      activateDemoLogin,
+      setCurrentUser,
+      setRoles
+    } from "./app.js";
+    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const user = await signInWithEmailAndPassword(auth, email, password.value);
+    const usernameField = document.getElementById("username");
+    const passwordField = document.getElementById("password");
+    const errorText = document.getElementById("error");
+    const loginButton = document.getElementById("loginButton");
 
-    const snap = await getDoc(doc(db,"users", user.user.uid));
-    const roles = snap.data().role;
+    async function login() {
+      errorText.textContent = "";
+      loginButton.disabled = true;
 
-    localStorage.setItem("roles", JSON.stringify(roles));
+      try {
+        const email = `${usernameField.value}@farmerfuzzys.local`;
+        const user = await signInWithEmailAndPassword(auth, email, passwordField.value);
+        const snap = await getDoc(doc(db, "users", user.user.uid));
+        if (!snap.exists()) {
+          throw new Error("Keine Rollen vorhanden");
+        }
 
-    window.location.href = "dashboard.html";
+        const roleData = snap.data().role || [];
+        const roles = Array.isArray(roleData) ? roleData : [roleData];
+        setRoles(roles);
+        setCurrentUser({
+          id: user.user.uid,
+          name: usernameField.value,
+          role: roles[0] || ROLE_EINSATZKRAFT,
+          stationId: snap.data().stationId || null,
+          email
+        });
+        window.location.href = "dashboard.html";
+      } catch (error) {
+        errorText.textContent = "Login fehlgeschlagen. Für die Vorschau kannst du unten einen Demo-Zugang nutzen.";
+      } finally {
+        loginButton.disabled = false;
+      }
+    }
 
-  } catch (e) {
-    error.innerText = "Login fehlgeschlagen";
-  }
-};
-</script>
+    loginButton.addEventListener("click", login);
+    passwordField.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        login();
+      }
+    });
 
+    document.getElementById("demoHost").addEventListener("click", () => activateDemoLogin([ROLE_HOST]));
+    document.getElementById("demoAdmin").addEventListener("click", () => activateDemoLogin([ROLE_ADMIN]));
+    document.getElementById("demoWehrleiter").addEventListener("click", () => activateDemoLogin([ROLE_WEHRLEITER]));
+    document.getElementById("demoDisponent").addEventListener("click", () => activateDemoLogin([ROLE_DISPONENT]));
+    document.getElementById("demoEinsatzkraft").addEventListener("click", () => activateDemoLogin([ROLE_EINSATZKRAFT]));
+    document.getElementById("demoDisplay").addEventListener("click", () => activateDemoLogin([ROLE_ALARM_DISPLAY]));
+  </script>
 </body>
 </html>
