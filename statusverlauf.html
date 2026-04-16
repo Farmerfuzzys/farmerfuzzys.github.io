@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statusverlauf | Fire Dispatcher Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="portal-body portal-body-dark">
+  <main class="portal-app">
+    <aside class="portal-sidebar portal-sidebar-dark">
+      <div class="portal-sidebar-brand">
+        <img src="Fire Dispatcher.png" alt="Fire Dispatcher Logo">
+      </div>
+      <nav class="portal-nav" id="portalNav"></nav>
+    </aside>
+
+    <section class="portal-main status-history-body">
+      <header class="portal-topbar portal-topbar-dark">
+        <div>
+          <h1>Statusverlauf</h1>
+          <p>Letzte Statusänderungen und Meldungen</p>
+        </div>
+        <div class="portal-header-right">
+          <div class="portal-school-name" id="schoolName">Fire Dispatcher</div>
+        </div>
+      </header>
+
+      <section class="status-history-shell">
+        <div id="statusHistoryList" class="status-history-list"></div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module">
+    import {
+      ROLE_ADMIN,
+      ROLE_HOST,
+      ROLE_WEHRLEITER,
+      enforcePageAccess,
+      formatUpdatedAt,
+      getCurrentUser,
+      getManagedStationIds,
+      getStationName,
+      getStatusHistory,
+      requireAnyRole
+    } from "./app.js";
+
+    if (!enforcePageAccess([ROLE_HOST, ROLE_ADMIN, ROLE_WEHRLEITER])) {
+      throw new Error("Kein Zugriff");
+    }
+
+    const user = getCurrentUser();
+    const statusHistoryList = document.getElementById("statusHistoryList");
+    const schoolName = document.getElementById("schoolName");
+    const portalNav = document.getElementById("portalNav");
+
+    schoolName.textContent = user.role;
+
+    const navigation = [
+      { label: "Übersicht", href: "dashboard.html", roles: [ROLE_HOST, ROLE_ADMIN, ROLE_WEHRLEITER] },
+      { label: "Verwaltung", href: "verwaltung.html", roles: [ROLE_HOST, ROLE_ADMIN, ROLE_WEHRLEITER] },
+      { label: "Statusübersicht", href: "status.html", roles: [ROLE_HOST, ROLE_ADMIN, ROLE_WEHRLEITER] },
+      { label: "Statusverlauf", href: "statusverlauf.html", roles: [ROLE_HOST, ROLE_ADMIN, ROLE_WEHRLEITER] },
+      { label: "Einstellungen", href: "settings.html", roles: [ROLE_HOST, ROLE_ADMIN, ROLE_WEHRLEITER] }
+    ];
+
+    portalNav.innerHTML = navigation
+      .filter((item) => requireAnyRole(item.roles))
+      .map((item) => `<a class="portal-nav-item ${item.href === "statusverlauf.html" ? "active" : ""}" href="${item.href}">${item.label}</a>`)
+      .join("");
+
+    function renderHistory() {
+      const entries = getStatusHistory(getManagedStationIds(user));
+      statusHistoryList.innerHTML = entries.length
+        ? entries.map((entry) => `
+          <div class="status-history-row">
+            <div class="status-history-time">${formatUpdatedAt(entry.createdAt)}</div>
+            <div class="status-history-main">
+              <strong>${entry.type}</strong>
+              <span>${entry.vehicleName}</span>
+              <small>${entry.message || "-"} · ${getStationName(entry.stationId)} · ${entry.operator || "System"}</small>
+            </div>
+            <div class="status-history-side">${entry.status}</div>
+          </div>
+        `).join("")
+        : '<div class="portal-list-item">Noch keine Statusmeldungen vorhanden.</div>';
+    }
+
+    renderHistory();
+  </script>
+</body>
+</html>
