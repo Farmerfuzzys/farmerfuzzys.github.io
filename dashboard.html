@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Übersicht | Fire Dispatcher Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="portal-body portal-body-dark">
+  <main class="portal-app">
+    <aside class="portal-sidebar portal-sidebar-dark">
+      <div class="portal-sidebar-brand">
+        <img src="Fire Dispatcher.png" alt="Fire Dispatcher Logo">
+      </div>
+      <nav class="portal-nav" id="portalNav"></nav>
+      <div class="portal-sidebar-footer">
+        <a class="portal-nav-item" href="settings.html">Einstellungen</a>
+      </div>
+    </aside>
+
+    <section class="portal-main">
+      <header class="portal-topbar portal-topbar-dark">
+        <div>
+          <h1>Übersicht</h1>
+          <p id="welcomeText">Hallo</p>
+        </div>
+
+        <div class="portal-header-right">
+          <div class="portal-school-name" id="schoolName">Meine Feuerwehr</div>
+          <div class="portal-user-menu">
+            <button id="userMenuButton" class="portal-avatar-button" type="button">
+              <span id="avatarInitials">FD</span>
+            </button>
+            <div id="userMenuDropdown" class="portal-dropdown hidden">
+              <div class="portal-dropdown-header">
+                <strong id="userName">Jaemy</strong>
+                <span id="userRole">HOST</span>
+              </div>
+              <div class="portal-dropdown-item">Deutsch</div>
+              <a class="portal-dropdown-item button-like" href="settings.html">Einstellungen</a>
+              <button id="logoutButton" class="portal-dropdown-item button-like" type="button">Logout</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="portal-content">
+        <div class="portal-card portal-card-dark large">
+          <div class="portal-card-title">Neuigkeiten</div>
+          <div id="newsComposer" class="news-composer"></div>
+          <div id="newsList" class="portal-news-list"></div>
+        </div>
+
+        <div class="portal-card portal-card-dark">
+          <div class="portal-card-title">Meine Rolle</div>
+          <p id="roleDescription"></p>
+        </div>
+
+        <div class="portal-card portal-card-dark">
+          <div class="portal-card-title">Zugriffe</div>
+          <div id="moduleList" class="portal-module-list"></div>
+        </div>
+
+        <div class="portal-card portal-card-dark large">
+          <div class="portal-card-title">Verwaltete Wehren</div>
+          <div id="managedStationsList" class="portal-list"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module">
+    import {
+      ROLE_ADMIN,
+      ROLE_ALARM_DISPLAY,
+      ROLE_DISPONENT,
+      ROLE_EINSATZKRAFT,
+      ROLE_HOST,
+      ROLE_WEHRLEITER,
+      addNews,
+      deleteNews,
+      enforcePageAccess,
+      getCurrentUser,
+      getManagedStations,
+      getOwnerAdminName,
+      getStationName,
+      getVisibleNews,
+      logout,
+      requireAnyRole
+    } from "./app.js";
+
+    // Protect page access - redirect to login if not authenticated
+    if (!enforcePageAccess([ROLE_HOST, ROLE_ADMIN, ROLE_WEHRLEITER, ROLE_DISPONENT, ROLE_EINSATZKRAFT, ROLE_ALARM_DISPLAY])) {
+      throw new Error("Kein Zugriff");
+    }
+
+    const user = getCurrentUser();
+    const userName = document.getElementById("userName");
+    const userRole = document.getElementById("userRole");
+    const welcomeText = document.getElementById("welcomeText");
+    const roleDescription = document.getElementById("roleDescription");
+    const moduleList = document.getElementById("moduleList");
+    const newsList = document.getElementById("newsList");
+    const newsComposer = document.getElementById("newsComposer");
+    const portalNav = document.getElementById("portalNav");
+    const schoolName = document.getElementById("schoolName");
+    const avatarInitials = document.getElementById("avatarInitials");
+    const userMenuButton = document.getElementById("userMenuButton");
+    const userMenuDropdown = document.getElementById("userMenuDropdown");
+    const managedStationsList = document.getElementById("managedStationsList");
+
+    const navigation = [
+      { label: "Übersicht", href: "dashboard.html", roles: [ROLE_HOST, ROLE_ADMIN, ROLE_WEHRLEITER, ROLE_DISPONENT, ROLE_EINSATZKRAFT, ROLE_ALARM_DISPLAY] },
+      { label: "Verwaltung", href: "verwaltung.html", roles: [ROLE_HOST, ROLE_ADMIN, ROLE_WEHRLEITER] },
+      { label: "Leitstelle", href: "leitstelle.html", roles: [ROLE_DISPONENT] },
+      { label: "Alarmdisplay", href: "display.html", roles: [ROLE_ALARM_DISPLAY] },
+      { label: "Statusübersicht", href: "status.html", roles: [ROLE_HOST, ROLE_ADMIN, ROLE_WEHRLEITER] },
+      { label: "Statusverlauf", href: "statusverlauf.html", roles: [ROLE_HOST, ROLE_ADMIN, ROLE_WEHRLEITER] },
+      { label: "Einstellungen", href: "settings.html", roles: [ROLE_HOST, ROLE_ADMIN, ROLE_WEHRLEITER, ROLE_DISPONENT, ROLE_EINSATZKRAFT, ROLE_ALARM_DISPLAY] }
+    ];
+
+    const descriptions = {
+      [ROLE_HOST]: "Du verwaltest alle Admins und siehst alle Wehren aller Admins.",
+      [ROLE_ADMIN]: "Du verwaltest deine eigenen Wehren und siehst nur die Wehren, die dir zugeordnet sind.",
+      [ROLE_WEHRLEITER]: "Du verwaltest nur deine eigene Wehr, ihre Mitglieder, Fahrzeuge und Einstellungen.",
+      [ROLE_DISPONENT]: "Du nutzt die Leitstelle deiner Wehr.",
+      [ROLE_EINSATZKRAFT]: "Du siehst die für deine Wehr freigegebenen Bereiche.",
+      [ROLE_ALARM_DISPLAY]: "Du nutzt das Alarmdisplay deiner Wehr."
+    };
+
+    userName.textContent = user.name || "Benutzer";
+    userRole.textContent = user.role || ROLE_EINSATZKRAFT;
+    welcomeText.textContent = `Hallo ${user.name || "Benutzer"}`;
+    avatarInitials.textContent = (user.name || "FD").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+    schoolName.textContent = user.stationId ? getStationName(user.stationId) : "Fire Dispatcher";
+    roleDescription.textContent = descriptions[user.role] || "Du bist im Portal angemeldet.";
+
+    portalNav.innerHTML = navigation
+      .filter((item) => requireAnyRole(item.roles))
+      .map((item) => `<a class="portal-nav-item ${item.href === "dashboard.html" ? "active" : ""}" href="${item.href}">${item.label}</a>`)
+      .join("");
+
+    moduleList.innerHTML = navigation
+      .filter((item) => requireAnyRole(item.roles))
+      .map((item) => `<span class="portal-module-chip">${item.label}</span>`)
+      .join("");
+
+    function renderManagedStations() {
+      const stations = getManagedStations(user);
+      if (!stations.length) {
+        managedStationsList.innerHTML = '<div class="portal-list-item">Keine Wehren zugeordnet.</div>';
+        return;
+      }
+
+      managedStationsList.innerHTML = stations.map((station) => `
+        <div class="portal-list-item">
+          <strong>${station.name}</strong>
+          <span>${station.code}</span>
+          <small>${station.members} Mitglieder · ${station.vehicleCount} Fahrzeuge · Admin ${getOwnerAdminName(station.ownerAdminId)}</small>
+        </div>
+      `).join("");
+    }
+
+    function renderNews() {
+      const items = getVisibleNews(user);
+      newsList.innerHTML = items.length
+        ? items.map((item) => {
+            const canDelete = user.role === ROLE_HOST
+              || (user.role === ROLE_ADMIN && getManagedStations(user).some((station) => station.id === item.stationId))
+              || (user.role === ROLE_WEHRLEITER && item.stationId === user.stationId);
+            return `
+              <article class="portal-news-item">
+                <strong>${item.title}</strong>
+                <p>${item.body}</p>
+                <small>${item.author} · ${item.stationId ? getStationName(item.stationId) : "System"} · ${new Date(item.createdAt).toLocaleString("de-DE")}</small>
+                ${canDelete ? `<button class="secondary inline-fit" data-delete-news="${item.id}" type="button">Neuigkeit löschen</button>` : ""}
+              </article>
+            `;
+          }).join("")
+        : '<div class="portal-empty-state small"><p>Bisher gibt es keine News.</p></div>';
+
+      newsList.querySelectorAll("[data-delete-news]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (!window.confirm("Sind Sie sicher, dass diese Neuigkeit gelöscht werden soll?")) {
+            return;
+          }
+          deleteNews(button.dataset.deleteNews);
+          renderNews();
+        });
+      });
+    }
+
+    function renderComposer() {
+      const canPost = [ROLE_HOST, ROLE_ADMIN, ROLE_WEHRLEITER].includes(user.role);
+      if (!canPost) {
+        newsComposer.innerHTML = "";
+        return;
+      }
+
+      const stations = getManagedStations(user);
+      const targetOptions = user.role === ROLE_HOST
+        ? '<option value="system">Systemweit</option>'
+        : "";
+      const stationOptions = stations.map((station) => `<option value="${station.id}">${station.name}</option>`).join("");
+
+      newsComposer.innerHTML = `
+        <div class="field">
+          <label for="newsTitle">Titel</label>
+          <input id="newsTitle" placeholder="Titel">
+        </div>
+        <div class="field">
+          <label for="newsBody">Inhalt</label>
+          <textarea id="newsBody" placeholder="Neuigkeit"></textarea>
+        </div>
+        <div class="field">
+          <label for="newsTarget">Ziel</label>
+          <select id="newsTarget">${targetOptions}${stationOptions}</select>
+        </div>
+        <button id="publishNews" type="button">Neuigkeit veröffentlichen</button>
+        <p id="newsFeedback" class="feedback"></p>
+      `;
+
+      document.getElementById("publishNews").addEventListener("click", () => {
+        const title = document.getElementById("newsTitle").value.trim();
+        const body = document.getElementById("newsBody").value.trim();
+        const target = document.getElementById("newsTarget").value;
+        const feedback = document.getElementById("newsFeedback");
+
+        if (!title || !body) {
+          feedback.textContent = "Bitte Titel und Inhalt eintragen.";
+          return;
+        }
+
+        if (!window.confirm("Sind Sie sicher, dass diese Neuigkeit veröffentlicht werden soll?")) {
+          return;
+        }
+
+        addNews({
+          title,
+          body,
+          stationId: target === "system" ? null : target,
+          author: user.name || "Benutzer"
+        });
+
+        feedback.textContent = "Neuigkeit wurde veröffentlicht.";
+        feedback.className = "feedback success-text";
+        renderNews();
+      });
+    }
+
+    document.getElementById("logoutButton").addEventListener("click", logout);
+    userMenuButton.addEventListener("click", () => userMenuDropdown.classList.toggle("hidden"));
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest(".portal-user-menu")) {
+        userMenuDropdown.classList.add("hidden");
+      }
+    });
+
+    renderComposer();
+    renderNews();
+    renderManagedStations();
+  </script>
+</body>
+</html>

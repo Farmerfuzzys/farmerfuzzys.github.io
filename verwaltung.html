@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verwaltung | Fire Dispatcher Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="portal-body portal-body-dark">
+  <main class="portal-app">
+    <aside class="portal-sidebar portal-sidebar-dark">
+      <div class="portal-sidebar-brand">
+        <img src="Fire Dispatcher.png" alt="Fire Dispatcher Logo">
+      </div>
+      <nav class="portal-nav" id="portalNav"></nav>
+    </aside>
+
+    <section class="portal-main">
+      <header class="portal-topbar portal-topbar-dark">
+        <div>
+          <h1>Verwaltung</h1>
+          <p id="managementIntro">Wehrverwaltung</p>
+        </div>
+        <div class="portal-header-right">
+          <div class="portal-school-name" id="schoolName">Meine Feuerwehr</div>
+          <div class="portal-userbox portal-userbox-dark">
+            <div class="portal-user-meta">
+              <strong id="userName">Jaemy</strong>
+              <span id="userRole">HOST</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="portal-content two-column" id="managementContent"></section>
+    </section>
+  </main>
+
+  <script type="module">
+    import { auth, db } from "./firebase.js";
+    import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import {
+      ROLE_ALARM_DISPLAY,
+      ROLE_DISPONENT,
+      ROLE_EINSATZKRAFT,
+      ROLE_HOST,
+      ROLE_WEHRLEITER,
+      addAccount,
+      addStation,
+      addVehicle,
+      deleteAccount,
+      deleteStation,
+      deleteVehicle,
+      enforcePageAccess,
+      getAccounts,
+      getCurrentUser,
+      getStations,
+      getStatusInfo,
+      getStatusOptions,
+      getVehicles,
+      requireAnyRole,
+      updateAccount,
+      updateStation,
+      updateVehicleStatus
+    } from "./app.js";
+
+    if (!enforcePageAccess([ROLE_HOST, ROLE_WEHRLEITER])) {
+      throw new Error("Kein Zugriff");
+    }
+
+    const user = getCurrentUser();
+    const managementContent = document.getElementById("managementContent");
+    const portalNav = document.getElementById("portalNav");
+
+    document.getElementById("userName").textContent = user.name || "Benutzer";
+    document.getElementById("userRole").textContent = user.role || ROLE_EINSATZKRAFT;
+
+    const navigation = [
+      { label: "Übersicht", href: "dashboard.html", roles: [ROLE_HOST, ROLE_WEHRLEITER, ROLE_DISPONENT, ROLE_EINSATZKRAFT, ROLE_ALARM_DISPLAY] },
+      { label: "Leitstelle", href: "leitstelle.html", roles: [ROLE_DISPONENT] },
+      { label: "Alarmdisplay", href: "display.html", roles: [ROLE_ALARM_DISPLAY] },
+      { label: "Verwaltung", href: "verwaltung.html", roles: [ROLE_HOST, ROLE_WEHRLEITER] },
+      { label: "Einstellungen", href: "settings.html", roles: [ROLE_HOST, ROLE_WEHRLEITER, ROLE_DISPONENT, ROLE_EINSATZKRAFT, ROLE_ALARM_DISPLAY] }
+    ];
+
+    portalNav.innerHTML = navigation
+      .filter((item) => requireAnyRole(item.roles))
+      .map((item) => `<a class="portal-nav-item ${item.href === "verwaltung.html" ? "active" : ""}" href="${item.href}">${item.label}</a>`)
+      .join("");
+
+    const station = getStations().find((entry) => entry.id === user.stationId);
+    document.getElementById("schoolName").textContent = station?.name || "Fire Dispatcher";
+    document.getElementById("managementIntro").textContent = user.role === ROLE_HOST
+      ? "Host-Bedienung für Wehren"
+      : `Verwaltung für ${station?.name || "deine Wehr"}`;
+
+    function renderHostView() {
+      const stations = getStations();
+      const wehrleiterAccounts = getAccounts().filter((account) => account.role === ROLE_WEHRLEITER);
+
+      managementContent.innerHTML = `
+        <div class="portal-card portal-card-dark">
+          <div class="portal-card-title">Neue Wehr anlegen</div>
+          <div class="field">
+            <label for="stationName">Name der Wehr</label>
+            <input id="stationName" placeholder="Name der Wehr">
+          </div>
+          <div class="field">
+            <label for="stationCode">Kürzel</label>
+            <input id="stationCode" placeholder="Kürzel">
+          </div>
+          <div class="field">
+            <label for="leaderName">Erster Wehrleiter</label>
+            <input id="leaderName" placeholder="Name des Wehrleiters">
+          </div>
+          <div class="field">
+            <label for="leaderEmail">E-Mail Wehrleiter</label>
+            <input id="leaderEmail" type="email" placeholder="E-Mail">
+          </div>
+          <div class="field">
+            <label for="leaderPassword">Passwort Wehrleiter</label>
+            <input id="leaderPassword" type="password" placeholder="Mindestens 6 Zeichen">
+          </div>
+          <button id="saveStation" type="button">Wehr erstellen</button>
+          <p id="stationFeedback" class="feedback"></p>
+        </div>
+
+        <div class="portal-card portal-card-dark large">
+          <div class="portal-card-title">Wehren</div>
+          <div class="portal-list" id="stationList">
+            ${stations.length ? stations.map((entry) => `
+              <div class="portal-list-item station-row">
+                <strong>${entry.name}</strong>
+                <span>${entry.code}</span>
+                <small>${entry.members} Mitglieder · ${entry.vehicleCount} Fahrzeuge</small>
+                <button class="secondary danger-button inline-fit" data-delete-station="${entry.id}" type="button">Wehr löschen</button>
+              </div>
+            `).join("") : '<div class="portal-list-item">Noch keine Wehren vorhanden.</div>'}
+          </div>
+        </div>
+
+        <div class="portal-card portal-card-dark large">
+          <div class="portal-card-title">Wehrleiter</div>
+          <div class="portal-list" id="wehrleiterList">
+            ${wehrleiterAccounts.length ? wehrleiterAccounts.map((account) => `
+              <div class="portal-list-item account-item">
+                <strong>${account.name}</strong>
+                <span>${getStations().find((station) => station.id === account.stationId)?.name || "Keine Wehr"} · ${account.email || "ohne E-Mail"}</span>
+                <div class="account-edit-grid">
+                  <input data-host-name="${account.id}" value="${account.name || ""}">
+                  <input data-host-email="${account.id}" value="${account.email || ""}">
+                  <select data-host-station="${account.id}">
+                    ${stations.map((station) => `<option value="${station.id}" ${station.id === account.stationId ? "selected" : ""}>${station.name}</option>`).join("")}
+                  </select>
+                </div>
+                <div class="account-actions-row">
+                  <button class="secondary inline-fit" data-host-save="${account.id}" type="button">Wehrleiter speichern</button>
+                  <button class="secondary danger-button inline-fit" data-host-delete="${account.id}" type="button">Wehrleiter löschen</button>
+                </div>
+              </div>
+            `).join("") : '<div class="portal-list-item">Noch keine Wehrleiter vorhanden.</div>'}
+          </div>
+        </div>
+      `;
+
+      document.getElementById("saveStation").addEventListener("click", async () => {
+        const name = document.getElementById("stationName").value.trim();
+        const code = document.getElementById("stationCode").value.trim();
+        const wehrleiterName = document.getElementById("leaderName").value.trim();
+        const wehrleiterEmail = document.getElementById("leaderEmail").value.trim();
+        const wehrleiterPassword = document.getElementById("leaderPassword").value.trim();
+        const feedback = document.getElementById("stationFeedback");
+        const saveButton = document.getElementById("saveStation");
+
+        if (!name || !code || !wehrleiterName) {
+          feedback.textContent = "Bitte Wehrname, Kürzel und ersten Wehrleiter eintragen.";
+          feedback.className = "feedback error-text";
+          return;
+        }
+
+        if (!wehrleiterPassword || wehrleiterPassword.length < 6) {
+          feedback.textContent = "Passwort muss mindestens 6 Zeichen lang sein.";
+          feedback.className = "feedback error-text";
+          return;
+        }
+
+        if (!window.confirm("Sind Sie sicher, dass diese Wehr erstellt werden soll?")) {
+          return;
+        }
+
+        saveButton.disabled = true;
+        feedback.textContent = "Erstelle Wehr...";
+        feedback.className = "feedback";
+
+        try {
+          // Create the station first
+          const stations = addStation({ name, code, wehrleiterName, wehrleiterEmail });
+          const newStation = stations[stations.length - 1];
+
+          // Create Wehrleiter in Firebase Authentication
+          const userCredential = await createUserWithEmailAndPassword(auth, wehrleiterEmail, wehrleiterPassword);
+          const uid = userCredential.user.uid;
+
+          // Save user data in Firestore
+          await setDoc(doc(db, "users", uid), {
+            name: wehrleiterName,
+            email: wehrleiterEmail,
+            role: ROLE_WEHRLEITER,
+            stationId: newStation.id,
+            createdAt: new Date().toISOString()
+          });
+
+          feedback.textContent = "Wehr und Wehrleiter wurden erfolgreich erstellt!";
+          feedback.className = "feedback success-text";
+          document.getElementById("stationName").value = "";
+          document.getElementById("stationCode").value = "";
+          document.getElementById("leaderName").value = "";
+          document.getElementById("leaderEmail").value = "";
+          document.getElementById("leaderPassword").value = "";
+          renderHostView();
+        } catch (error) {
+          let errorMessage = "Fehler beim Erstellen der Wehr.";
+          if (error.code === "auth/email-already-in-use") {
+            errorMessage = "Diese E-Mail ist bereits registriert.";
+          } else if (error.code === "auth/invalid-email") {
+            errorMessage = "Ungültige E-Mail-Adresse.";
+          } else if (error.code === "auth/weak-password") {
+            errorMessage = "Passwort ist zu schwach.";
+          }
+          feedback.textContent = errorMessage;
+          feedback.className = "feedback error-text";
+          console.error("Fehler beim Erstellen der Wehr:", error);
+        } finally {
+          saveButton.disabled = false;
+        }
+      });
+
+      managementContent.querySelectorAll("[data-delete-station]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (!window.confirm("Sind Sie sicher, dass diese Wehr gelöscht werden soll?")) {
+            return;
+          }
+          deleteStation(button.dataset.deleteStation);
+          renderHostView();
+        });
+      });
+
+      managementContent.querySelectorAll("[data-host-save]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (!window.confirm("Sind Sie sicher, dass dieser Wehrleiter bearbeitet werden soll?")) {
+            return;
+          }
+          const accountId = button.dataset.hostSave;
+          const name = managementContent.querySelector(`[data-host-name="${accountId}"]`).value.trim();
+          const email = managementContent.querySelector(`[data-host-email="${accountId}"]`).value.trim();
+          const stationId = managementContent.querySelector(`[data-host-station="${accountId}"]`).value;
+          updateAccount(accountId, { name, email, stationId, role: ROLE_WEHRLEITER });
+          renderHostView();
+        });
+      });
+
+      managementContent.querySelectorAll("[data-host-delete]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (!window.confirm("Sind Sie sicher, dass dieser Wehrleiter gelöscht werden soll?")) {
+            return;
+          }
+          deleteAccount(button.dataset.hostDelete);
+          renderHostView();
+        });
+      });
+    }
+
+    function visibleAccounts() {
+      return getAccounts(user.stationId);
+    }
+
+    function visibleVehicles() {
+      return getVehicles(user.stationId);
+    }
+
+    function roleChoices() {
+      return [ROLE_WEHRLEITER, ROLE_DISPONENT, ROLE_EINSATZKRAFT, ROLE_ALARM_DISPLAY];
+    }
+
+    function canEditAccount(account) {
+      if (user.role !== ROLE_WEHRLEITER) {
+        return false;
+      }
+      if (account.role === ROLE_WEHRLEITER) {
+        return account.id === user.id;
+      }
+      return account.stationId === user.stationId;
+    }
+
+    function renderWehrleiterView() {
+      const currentStation = getStations().find((entry) => entry.id === user.stationId);
+      const accounts = visibleAccounts();
+      const vehicles = visibleVehicles();
+      const statusOptions = getStatusOptions();
+      const logoPreview = currentStation?.logoDataUrl
+        ? `<img src="${currentStation.logoDataUrl}" alt="Wehrlogo" class="station-logo-preview">`
+        : '<div class="logo-preview-empty">Noch kein Wehrlogo hinterlegt.</div>';
+      const autoClearSeconds = Number(currentStation?.alarmAutoClearSeconds || 300);
+      const autoClearMinutes = Math.floor(autoClearSeconds / 60);
+      const autoClearRemainingSeconds = autoClearSeconds % 60;
+
+      managementContent.innerHTML = `
+        <div class="portal-card portal-card-dark">
+          <div class="portal-card-title">Eigene Wehr</div>
+          <div class="field">
+            <label for="ownStationName">Name der Wehr</label>
+            <input id="ownStationName" value="${currentStation?.name || ""}" placeholder="Name der Wehr">
+          </div>
+          <div class="field">
+            <label for="ownStationCode">Kürzel</label>
+            <input id="ownStationCode" value="${currentStation?.code || ""}" placeholder="Kürzel">
+          </div>
+          <button id="saveOwnStation" type="button">Wehrdaten speichern</button>
+          <p id="ownStationFeedback" class="feedback"></p>
+        </div>
+
+        <div class="portal-card portal-card-dark">
+          <div class="portal-card-title">Mitglied anlegen</div>
+          <div class="field">
+            <label for="accountName">Name</label>
+            <input id="accountName" placeholder="Name">
+          </div>
+          <div class="field">
+            <label for="accountEmail">E-Mail</label>
+            <input id="accountEmail" type="email" placeholder="E-Mail">
+          </div>
+          <div class="field">
+            <label for="accountPassword">Passwort</label>
+            <input id="accountPassword" type="password" placeholder="Mindestens 6 Zeichen">
+          </div>
+          <div class="field">
+            <label for="accountRole">Rolle</label>
+            <select id="accountRole">
+              ${roleChoices().map((role) => `<option value="${role}">${role}</option>`).join("")}
+            </select>
+          </div>
+          <button id="createAccount" type="button">Mitglied speichern</button>
+          <p id="accountFeedback" class="feedback"></p>
+        </div>
+
+        <div class="portal-card portal-card-dark">
+          <div class="portal-card-title">Alarmdisplay</div>
+          <div class="station-logo-panel">
+            ${logoPreview}
+          </div>
+          <div class="field">
+            <label for="displayLogo">Wehrlogo hochladen</label>
+            <input id="displayLogo" type="file" accept="image/*">
+          </div>
+          <div class="field two-inline-fields">
+            <div>
+              <label for="alarmMinutes">Auto-Ausblendung Minuten</label>
+              <input id="alarmMinutes" type="number" min="0" value="${autoClearMinutes}">
+            </div>
+            <div>
+              <label for="alarmSeconds">Auto-Ausblendung Sekunden</label>
+              <input id="alarmSeconds" type="number" min="0" max="59" value="${autoClearRemainingSeconds}">
+            </div>
+          </div>
+          <button id="saveDisplaySettings" type="button">Alarmdisplay speichern</button>
+          <p id="displayFeedback" class="feedback"></p>
+        </div>
+
+        <div class="portal-card portal-card-dark large">
+          <div class="portal-card-title">Mitglieder</div>
+          <div class="portal-list" id="accountList">
+            ${accounts.length ? accounts.map((account) => {
+              const editable = canEditAccount(account);
+              return `
+                <div class="portal-list-item account-item">
+                  <strong>${account.name}</strong>
+                  <span>${account.email || "ohne E-Mail"} · ${account.role}</span>
+                  <div class="account-edit-grid">
+                    <input data-name-account="${account.id}" value="${account.name || ""}" ${editable ? "" : "disabled"}>
+                    <input data-email-account="${account.id}" value="${account.email || ""}" ${editable ? "" : "disabled"}>
+                    <select data-role-account="${account.id}" ${editable ? "" : "disabled"}>
+                      ${roleChoices().map((role) => `<option value="${role}" ${account.role === role ? "selected" : ""}>${role}</option>`).join("")}
+                    </select>
+                  </div>
+                  <div class="account-actions-row">
+                    <button class="secondary inline-fit" data-save-account="${account.id}" type="button" ${editable ? "" : "disabled"}>Speichern</button>
+                    <button class="secondary danger-button inline-fit" data-delete-account="${account.id}" type="button" ${editable && account.id !== user.id ? "" : "disabled"}>Löschen</button>
+                  </div>
+                </div>
+              `;
+            }).join("") : '<div class="portal-list-item">Noch keine Mitglieder vorhanden.</div>'}
+          </div>
+        </div>
+
+        <div class="portal-card portal-card-dark large">
+          <div class="portal-card-title">Fahrzeuge</div>
+          <div class="field">
+            <label for="vehicleName">Fahrzeugname</label>
+            <input id="vehicleName" placeholder="Fahrzeugname">
+          </div>
+          <div class="field">
+            <label for="vehicleType">Typ</label>
+            <input id="vehicleType" placeholder="Typ">
+          </div>
+          <div class="field">
+            <label for="vehicleCrew">Besatzung</label>
+            <input id="vehicleCrew" placeholder="Besatzung">
+          </div>
+          <div class="field">
+            <label for="vehicleStatus">Status</label>
+            <select id="vehicleStatus">
+              ${statusOptions.map((option) => `<option value="${option.value}">${option.label}</option>`).join("")}
+            </select>
+          </div>
+          <button id="createVehicle" type="button">Fahrzeug speichern</button>
+          <p id="vehicleFeedback" class="feedback"></p>
+          <div class="portal-list admin-vehicle-list" id="vehicleList">
+            ${vehicles.length ? vehicles.map((vehicle) => `
+              <div class="portal-list-item admin-vehicle-item">
+                <strong>${vehicle.name}</strong>
+                <span>${vehicle.type || "Fahrzeug"} · Besatzung ${vehicle.crew || "-"}</span>
+                <small>Aktueller Status: ${vehicle.status} - ${getStatusInfo(vehicle.status).label}</small>
+                <div class="status-button-row">
+                  ${statusOptions.map((option) => `
+                    <button class="secondary status-button ${Number(vehicle.status) === option.value ? "active" : ""}" data-status-vehicle="${vehicle.id}" data-status-value="${option.value}" type="button">${option.value}</button>
+                  `).join("")}
+                </div>
+                <button class="secondary danger-button inline-fit" data-delete-vehicle="${vehicle.id}" type="button">Fahrzeug löschen</button>
+              </div>
+            `).join("") : '<div class="portal-list-item">Noch keine Fahrzeuge vorhanden.</div>'}
+          </div>
+        </div>
+      `;
+
+        document.getElementById("saveOwnStation").addEventListener("click", () => {
+        const name = document.getElementById("ownStationName").value.trim();
+        const code = document.getElementById("ownStationCode").value.trim();
+        const feedback = document.getElementById("ownStationFeedback");
+
+        if (!name || !code) {
+          feedback.textContent = "Bitte Wehrname und Kürzel eintragen.";
+          return;
+        }
+
+        if (!window.confirm("Sind Sie sicher, dass die Wehrdaten gespeichert werden sollen?")) {
+          return;
+        }
+
+        updateStation(user.stationId, { name, code });
+        feedback.textContent = "Wehrdaten wurden gespeichert.";
+        feedback.className = "feedback success-text";
+      });
+
+      document.getElementById("createAccount").addEventListener("click", async () => {
+        const name = document.getElementById("accountName").value.trim();
+        const email = document.getElementById("accountEmail").value.trim();
+        const password = document.getElementById("accountPassword").value.trim();
+        const role = document.getElementById("accountRole").value;
+        const feedback = document.getElementById("accountFeedback");
+        const createButton = document.getElementById("createAccount");
+
+        if (!name) {
+          feedback.textContent = "Bitte einen Namen eintragen.";
+          feedback.className = "feedback error-text";
+          return;
+        }
+
+        if (!email) {
+          feedback.textContent = "Bitte eine E-Mail eintragen.";
+          feedback.className = "feedback error-text";
+          return;
+        }
+
+        if (!password || password.length < 6) {
+          feedback.textContent = "Passwort muss mindestens 6 Zeichen lang sein.";
+          feedback.className = "feedback error-text";
+          return;
+        }
+
+        if (!window.confirm("Sind Sie sicher, dass dieses Mitglied erstellt werden soll?")) {
+          return;
+        }
+
+        createButton.disabled = true;
+        feedback.textContent = "Erstelle Benutzer...";
+        feedback.className = "feedback";
+
+        try {
+          // Create user in Firebase Authentication
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          const uid = userCredential.user.uid;
+
+          // Save user data in Firestore
+          await setDoc(doc(db, "users", uid), {
+            name,
+            email,
+            role,
+            stationId: user.stationId || null,
+            createdAt: new Date().toISOString()
+          });
+
+          // Also save to local storage for consistency
+          addAccount({ name, email, role, stationId: user.stationId });
+
+          feedback.textContent = "Mitglied wurde erfolgreich erstellt!";
+          feedback.className = "feedback success-text";
+          document.getElementById("accountName").value = "";
+          document.getElementById("accountEmail").value = "";
+          document.getElementById("accountPassword").value = "";
+          renderWehrleiterView();
+        } catch (error) {
+          let errorMessage = "Fehler beim Erstellen des Mitglieds.";
+          if (error.code === "auth/email-already-in-use") {
+            errorMessage = "Diese E-Mail ist bereits registriert.";
+          } else if (error.code === "auth/invalid-email") {
+            errorMessage = "Ungültige E-Mail-Adresse.";
+          } else if (error.code === "auth/weak-password") {
+            errorMessage = "Passwort ist zu schwach.";
+          }
+          feedback.textContent = errorMessage;
+          feedback.className = "feedback error-text";
+          console.error("Fehler beim Erstellen des Benutzers:", error);
+        } finally {
+          createButton.disabled = false;
+        }
+      });
+
+      managementContent.querySelectorAll("[data-save-account]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (!window.confirm("Sind Sie sicher, dass dieses Mitglied gespeichert werden soll?")) {
+            return;
+          }
+          const accountId = button.dataset.saveAccount;
+          const name = managementContent.querySelector(`[data-name-account="${accountId}"]`).value.trim();
+          const email = managementContent.querySelector(`[data-email-account="${accountId}"]`).value.trim();
+          const role = managementContent.querySelector(`[data-role-account="${accountId}"]`).value;
+          updateAccount(accountId, { name, email, role });
+          renderWehrleiterView();
+        });
+      });
+
+      managementContent.querySelectorAll("[data-delete-account]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (!window.confirm("Sind Sie sicher, dass dieses Mitglied gelöscht werden soll?")) {
+            return;
+          }
+          deleteAccount(button.dataset.deleteAccount);
+          renderWehrleiterView();
+        });
+      });
+
+      document.getElementById("createVehicle").addEventListener("click", () => {
+        const name = document.getElementById("vehicleName").value.trim();
+        const type = document.getElementById("vehicleType").value.trim();
+        const crew = document.getElementById("vehicleCrew").value.trim();
+        const status = document.getElementById("vehicleStatus").value;
+        const feedback = document.getElementById("vehicleFeedback");
+
+        if (!name) {
+          feedback.textContent = "Bitte einen Fahrzeugnamen eintragen.";
+          return;
+        }
+
+        if (!window.confirm("Sind Sie sicher, dass dieses Fahrzeug erstellt werden soll?")) {
+          return;
+        }
+
+        addVehicle({
+          name,
+          type,
+          crew,
+          status,
+          station: currentStation?.name || "Eigene Wehr",
+          stationId: user.stationId
+        });
+        feedback.textContent = "Fahrzeug wurde gespeichert.";
+        feedback.className = "feedback success-text";
+        renderWehrleiterView();
+      });
+
+      managementContent.querySelectorAll("[data-status-vehicle]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const vehicleId = button.dataset.statusVehicle;
+          const nextStatus = Number(button.dataset.statusValue);
+          const nextStatusLabel = getStatusInfo(nextStatus).label;
+          if (!window.confirm(`Sind Sie sicher, dass der Fahrzeugstatus auf ${nextStatus} - ${nextStatusLabel} geändert werden soll?`)) {
+            return;
+          }
+          updateVehicleStatus(vehicleId, nextStatus);
+          renderWehrleiterView();
+        });
+      });
+
+      managementContent.querySelectorAll("[data-delete-vehicle]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (!window.confirm("Sind Sie sicher, dass dieses Fahrzeug gelöscht werden soll?")) {
+            return;
+          }
+          deleteVehicle(button.dataset.deleteVehicle);
+          renderWehrleiterView();
+        });
+      });
+
+      document.getElementById("saveDisplaySettings").addEventListener("click", async () => {
+        const minutes = Math.max(0, Number(document.getElementById("alarmMinutes").value || 0));
+        const seconds = Math.max(0, Math.min(59, Number(document.getElementById("alarmSeconds").value || 0)));
+        const fileInput = document.getElementById("displayLogo");
+        const feedback = document.getElementById("displayFeedback");
+        const totalSeconds = (minutes * 60) + seconds;
+
+        if (!window.confirm("Sind Sie sicher, dass die Alarmdisplay-Einstellungen gespeichert werden sollen?")) {
+          return;
+        }
+
+        let logoDataUrl = currentStation?.logoDataUrl || "";
+        const file = fileInput.files?.[0];
+
+        if (file) {
+          logoDataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error("Logo konnte nicht gelesen werden."));
+            reader.readAsDataURL(file);
+          }).catch(() => logoDataUrl);
+        }
+
+        updateStation(user.stationId, {
+          logoDataUrl,
+          alarmAutoClearSeconds: totalSeconds
+        });
+        feedback.textContent = "Alarmdisplay-Einstellungen wurden gespeichert.";
+        feedback.className = "feedback success-text";
+        renderWehrleiterView();
+      });
+    }
+
+    if (user.role === ROLE_HOST) {
+      renderHostView();
+    } else {
+      renderWehrleiterView();
+    }
+  </script>
+</body>
+</html>
